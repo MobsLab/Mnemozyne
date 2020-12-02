@@ -1,4 +1,4 @@
-function [fig_rip] = compSleepEvents(expe, mice_num)
+function [figH] = compRipStages(expe, mice_num)
 
 %==========================================================================
 % Details: compare sleep events (ripples, spindles, deltas if any) between
@@ -56,7 +56,7 @@ stageName = {'NREM','REM','Wake','N1','N2','N3','Sleep'};
 % get sleep epoch by stage
 for isuj = 1:length(Dir.path)
     load([Dir.path{isuj}{1} 'behavResources.mat'], 'SessionEpoch','Vtsd');
-    [sEpoch subst] = get_SleepEpoch(Dir.path{isuj}{1},Vtsd);
+    [sEpoch subst(isuj)] = get_SleepEpoch(Dir.path{isuj}{1},Vtsd);
 end
 % get sleep event details
 [rip ripmean] = get_SleepEvent(Dir.path,'Ripples',sEpoch,subst);
@@ -71,9 +71,8 @@ end
 % prep data for figures
 % get rid of empty data (without substaging)
 i=1;
-for isuj=1:length(Dir.path)
-    load([Dir.path{isuj}{1} 'Ripples.mat'],'ripmean','ripples_Info');    
-    if ripples_Info.substages
+for isuj=1:length(Dir.path)  
+    if subst(isuj)
         for isess=1:2
             wf(isess,4:6,i,1:size(ripmean.waveforms,4)) = ripmean.waveforms(isess,4:6,isuj,:);
         end
@@ -90,7 +89,7 @@ end
 maxy = max(max(max(max(squeeze(squeeze(squeeze(ripmean.waveforms(:,:,:,:))))))))*1.2;
 miny = min(min(min(min(squeeze(squeeze(squeeze(ripmean.waveforms(:,:,:,:))))))))*1.2;
 supertit = 'Ripples global figure';
-fig_rip = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'Name', supertit, 'NumberTitle','off');
+figH.rip = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'Name', supertit, 'NumberTitle','off');
     % Set plot titles
     ypos = 1.03; % position with 6 x 7 figure with 1600x2200 pixels (rate of diff between plot is .14)
     for iplot=1:6
@@ -106,7 +105,8 @@ fig_rip = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'Name'
         a2.FontSize = 9;
     end
     for istage=1:length(stageName)-1
-        if max(max(max(squeeze(squeeze(ripmean.waveforms(:,istage,:,:))))))
+        if ~(sum(sum(isnan(ripmean.waveforms(:,istage,:,:)))) == ...
+                size(ripmean.waveforms(:,istage,:,:),4)*2*size(ripmean.waveforms(:,istage,:,:),3))
             subplot(6,7,istage+1)
                 % plot pre-sleep event
                 if ~isempty(find(ripmean.waveforms(1,istage,:,:,:)>0)) % special case: no event for the session
@@ -174,8 +174,7 @@ fig_rip = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'Name'
     
      subplot(6,7,9:14)
        [p,h,her] = PlotErrorBarN_SL(ampdat,...
-                'barwidth', 0.6, 'newfig', 0,...
-                'colorpoints',1,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
         h.FaceColor = 'flat';
         h.CData(1,:) = [1 1 1]; h.CData(2,:) = [0 0 0];
         h.CData(4,:) = [1 1 1]; h.CData(5,:) = [0 0 0];
@@ -202,8 +201,7 @@ fig_rip = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'Name'
      
     subplot(6,7,16:21)
        [p,h,her] = PlotErrorBarN_SL(freqdat,...
-                'barwidth', 0.6, 'newfig', 0,...
-                'colorpoints',1,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
         h.FaceColor = 'flat';
         h.CData(1,:) = [1 1 1]; h.CData(2,:) = [0 0 0];
         h.CData(4,:) = [1 1 1]; h.CData(5,:) = [0 0 0];
@@ -222,8 +220,7 @@ fig_rip = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'Name'
     
     subplot(6,7,23:28)
        [p,h,her] = PlotErrorBarN_SL(durdat,...
-                'barwidth', 0.6, 'newfig', 0,...
-                'colorpoints',1,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
         h.FaceColor = 'flat';
         h.CData(1,:) = [1 1 1]; h.CData(2,:) = [0 0 0];
         h.CData(4,:) = [1 1 1]; h.CData(5,:) = [0 0 0];
@@ -242,8 +239,7 @@ fig_rip = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'Name'
     
      subplot(6,7,30:35)
        [p,h,her] = PlotErrorBarN_SL(globaldendat,...
-                'barwidth', 0.6, 'newfig', 0,...
-                'colorpoints',1,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
         h.FaceColor = 'flat';
         h.CData(1,:) = [1 1 1]; h.CData(2,:) = [0 0 0];
         h.CData(4,:) = [1 1 1]; h.CData(5,:) = [0 0 0];
@@ -262,8 +258,7 @@ fig_rip = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'Name'
     
      subplot(6,7,37:42)
        [p,h,her] = PlotErrorBarN_SL(localdendat,...
-                'barwidth', 0.6, 'newfig', 0,...
-                'colorpoints',1,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
         h.FaceColor = 'flat';
         h.CData(1,:) = [1 1 1]; h.CData(2,:) = [0 0 0];
         h.CData(4,:) = [1 1 1]; h.CData(5,:) = [0 0 0];
@@ -276,6 +271,6 @@ fig_rip = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'Name'
         set(h, 'LineWidth', 1);
         set(her, 'LineWidth', 1);
         ylabel('event/min');
-    % save figure
-    print([dir_out 'GlobalAnalyses_ripples'], '-dpng', '-r300');
+%     % save figure
+%     print([dir_out 'GlobalAnalyses_ripples'], '-dpng', '-r300');
         

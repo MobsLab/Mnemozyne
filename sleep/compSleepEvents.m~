@@ -1,4 +1,4 @@
-function [fig_rip] = compSleepEvents(expe, mice_num)
+function [figH] = compSleepEvents(expe, mice_num)
 
 %==========================================================================
 % Details: compare sleep events (ripples, spindles, deltas if any) between
@@ -90,7 +90,7 @@ end
 maxy = max(max(max(max(squeeze(squeeze(squeeze(ripmean.waveforms(:,:,:,:))))))))*1.2;
 miny = min(min(min(min(squeeze(squeeze(squeeze(ripmean.waveforms(:,:,:,:))))))))*1.2;
 supertit = 'Ripples global figure';
-fig_rip = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'Name', supertit, 'NumberTitle','off');
+figH.rip = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'Name', supertit, 'NumberTitle','off');
     % Set plot titles
     ypos = 1.03; % position with 6 x 7 figure with 1600x2200 pixels (rate of diff between plot is .14)
     for iplot=1:6

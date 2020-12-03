@@ -20,13 +20,8 @@ function [figH] = compRipStages(expe, mice_num)
 %==========================================================================
 
 %% Parameters
+sav=1;
 
-% Directory to save and name of the figure to save
-dir_out = [pwd '/' date '/'];
-%create folders
-if ~exist(dir_out,'dir')
-    mkdir(dir_out);
-end
 
 if strcmp(expe,'StimMFBWake')
     Dir = PathForExperimentsERC_SL(expe);
@@ -56,7 +51,7 @@ stageName = {'NREM','REM','Wake','N1','N2','N3','Sleep'};
 % get sleep epoch by stage
 for isuj = 1:length(Dir.path)
     load([Dir.path{isuj}{1} 'behavResources.mat'], 'SessionEpoch','Vtsd');
-    [sEpoch subst(isuj)] = get_SleepEpoch(Dir.path{isuj}{1},Vtsd);
+    [sEpoch{isuj} subst(isuj)] = get_SleepEpoch(Dir.path{isuj}{1},Vtsd);
 end
 % get sleep event details
 [rip ripmean] = get_SleepEvent(Dir.path,'Ripples',sEpoch,subst);
@@ -88,8 +83,8 @@ end
 % prep var - amplitude waveforms
 maxy = max(max(max(max(squeeze(squeeze(squeeze(ripmean.waveforms(:,:,:,:))))))))*1.2;
 miny = min(min(min(min(squeeze(squeeze(squeeze(ripmean.waveforms(:,:,:,:))))))))*1.2;
-supertit = 'Ripples global figure';
-figH.rip = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'Name', supertit, 'NumberTitle','off');
+supertit = 'Ripples during pre/post sleep - global figure';
+figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'Name', supertit, 'NumberTitle','off');
     % Set plot titles
     ypos = 1.03; % position with 6 x 7 figure with 1600x2200 pixels (rate of diff between plot is .14)
     for iplot=1:6
@@ -271,6 +266,15 @@ figH.rip = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'Name
         set(h, 'LineWidth', 1);
         set(her, 'LineWidth', 1);
         ylabel('event/min');
-%     % save figure
-%     print([dir_out 'GlobalAnalyses_ripples'], '-dpng', '-r300');
+if sav
+    % Directory to save and name of the figure to save
+    dir_out = [dropbox '/DataSL/StimMFBWake/ripples/Sleep/' date '/'];
+    %create folders
+    if ~exist(dir_out,'dir')
+        mkdir(dir_out);
+    end    
+
+    % save figure
+    print([dir_out 'GlobalAnalyses_ripples_' num2str(mice_num)], '-dpng', '-r300');
+end
         

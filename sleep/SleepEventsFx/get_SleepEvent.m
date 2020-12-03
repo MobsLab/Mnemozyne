@@ -33,10 +33,10 @@ for isuj=1:length(dirPath)
                 evtmean.localden(isess,4:6,isuj) = nan;
                 istage=7;
             end
-            evt.epoch{isuj,isess,istage} = and(RipplesEpoch,sEpoch{isess,istage});
+            evt.epoch{isuj,isess,istage} = and(RipplesEpoch,sEpoch{isuj}{isess,istage});
             % identify event indexes
             idx = find(ismember(Start(RipplesEpoch),Start(evt.epoch{isuj,isess,istage})));
-            ripstart = Start(and(evt.epoch{isuj,isess,istage},sEpoch{isess,istage}));
+            ripstart = Start(and(evt.epoch{isuj,isess,istage},sEpoch{isuj}{isess,istage}));
 
             evt.amp{isuj,isess,istage} = Ripples(idx,6);
             evt.freq{isuj,isess,istage} = Ripples(idx,5); 
@@ -45,14 +45,19 @@ for isuj=1:length(dirPath)
 
             % calculate densities
             numss = length(idx);       
-            sesslen = sum(Stop(sEpoch{isess,istage},'s')-Start(sEpoch{isess,istage},'s'));
+            sesslen = sum(Stop(sEpoch{isuj}{isess,istage},'s')-Start(sEpoch{isuj}{isess,istage},'s'));
             % global density
-            evt.globalden{isuj,isess,istage} = numss/sesslen;
-            % local density
-            for ievt=1:length(ripstart)
-                numev(ievt) = length(find(ripstart<ripstart(ievt)+30*1E4 & ripstart>ripstart(ievt)-30*1E4));
+            if numss
+                evt.globalden{isuj,isess,istage} = numss/sesslen;
+                % local density
+                for ievt=1:length(ripstart)
+                    evt.localden{isuj,isess,istage}(ievt) = length(find(ripstart<ripstart(ievt)+30*1E4 & ripstart>ripstart(ievt)-30*1E4));
+                end
+            else
+                evt.globalden{isuj,isess,istage} = nan;
+                evt.localden{isuj,isess,istage} = nan;
             end
-            evt.localden{isuj,isess,istage} = mean(numev);
+            
 
             evtmean.amp(isess,istage,isuj) = mean(evt.amp{isuj,isess,istage});
             evtmean.freq(isess,istage,isuj) = mean(evt.freq{isuj,isess,istage});
@@ -61,8 +66,8 @@ for isuj=1:length(dirPath)
                 evtmean.waveforms(isess,istage,isuj,1:size(T,2)) ...
                     = mean(evt.waveforms{isuj,isess,istage});
             end
-            evtmean.globalden(isess,istage,isuj) = mean(evt.globalden{isuj,isess,istage});
-            evtmean.localden(isess,istage,isuj) = mean(evt.localden{isuj,isess,istage});
+            evtmean.globalden(isess,istage,isuj) = evt.globalden{isuj,isess,istage};
+            evtmean.localden(isess,istage,isuj) = nanmean(evt.localden{isuj,isess,istage});
         end
     end
 end

@@ -41,7 +41,7 @@ set(0,'defaultTextFontSize',12)
 set(0,'defaultAxesFontSize',12)
 
 % var init
-stageName = {'NREM','REM','Wake','N1','N2','N3','Sleep'};
+stageName = {'NREM','Wake','N1','N2','N3','Sleep'};
 
 %%
 %#####################################################################
@@ -55,7 +55,16 @@ for isuj = 1:length(Dir.path)
 end
 % get sleep event details
 [rip ripmean] = get_SleepEvent(Dir.path,'Ripples',sEpoch,subst);
-                                                                                                                                                                                                                                
+           
+% count number of rip by subjet and stage
+if length(Dir.path)==1
+    for istage=1:length(stageName)-1
+        for isess=1:2
+            ripnbr(isess,istage) = length(rip.dur{isuj,isess,istage});
+        end
+    end
+end
+
 %%
 %#####################################################################
 %#                        F I G U R E S
@@ -75,7 +84,7 @@ for isuj=1:length(Dir.path)
     end
 end
 % prep plot titles
-ptitles = {'Avg Waveforms','Amplitude','Frequency','Duration','Global Density','Local Density'};
+ptitles = {'Avg Waveforms','Peak Amplitude','Frequency','Duration','Global Density','Local Density'};
 % prep number of mouse per analyses
 for istage=1:6
     numst(istage) = sum(~isnan(squeeze(ripmean.waveforms(1,istage,:,1))));
@@ -90,19 +99,27 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
     for iplot=1:6
         a1 = annotation('textbox',[.05 ypos-.14*iplot 0 0],...
             'String',ptitles{iplot},'FitBoxToText','on','EdgeColor','none'); 
-        a1.FontSize = 9;
+        a1.FontSize = 12;
     end
     % Set Number of mouse per stage at bottom of figure
-    xpos = 0.18;
-    for ist=1:6
-        a2 = annotation('textbox',[xpos+.11*ist .08 0 0],'String',['N=' num2str(numst(ist))],...
-            'FitBoxToText','on','EdgeColor','none'); 
-        a2.FontSize = 9;
+    xpos = 0.184;
+    for ist=1:length(stageName)-1
+        if length(Dir.path)==1
+            str = {stageName{ist},'', ...
+                ['N=' num2str(numst(ist))], ...
+                ['pre#: ' num2str(ripnbr(1,ist))], ...
+                ['post#: ' num2str(ripnbr(2,ist))]};
+        else
+            str = ['N=' num2str(numst(ist))];
+        end
+        a2 = annotation('textbox',[xpos+.1285*ist .08 0.08 .025],'String',str,...
+            'FitBoxToText','off','EdgeColor','none'); 
+        a2.FontSize = 11;        
     end
     for istage=1:length(stageName)-1
         if ~(sum(sum(isnan(ripmean.waveforms(:,istage,:,:)))) == ...
                 size(ripmean.waveforms(:,istage,:,:),4)*2*size(ripmean.waveforms(:,istage,:,:),3))
-            subplot(6,7,istage+1)
+            subplot(6,6,istage+1)
                 % plot pre-sleep event
                 if ~isempty(find(ripmean.waveforms(1,istage,:,:,:)>0)) % special case: no event for the session
                     if length(Dir.path)==1 % special case: if only one mouse
@@ -146,9 +163,10 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
                     yl.Color = 'b';
                 end
                 % format plot
-                title(stageName{istage})
+                title([stageName{istage}])
                 xlabel('time (ms)')
                 ylim([miny maxy])
+                xticks([0 30 60 90 120 150])
                 if istage==1
                     ylabel('uV')
                     %legend (make legend outside of plot and subplot!)
@@ -163,11 +181,12 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
     for i=1:length(Dir.path)
         nanfix(i,1) = nan;
     end
+    
     ampdat = [squeeze(ripmean.amp(1,1,:)) squeeze(ripmean.amp(2,1,:)) nanfix squeeze(ripmean.amp(1,2,:)) squeeze(ripmean.amp(2,2,:)) nanfix ...
          squeeze(ripmean.amp(1,3,:)) squeeze(ripmean.amp(2,3,:)) nanfix squeeze(ripmean.amp(1,4,:)) squeeze(ripmean.amp(2,4,:)) nanfix ...
-         squeeze(ripmean.amp(1,5,:)) squeeze(ripmean.amp(2,5,:)) nanfix squeeze(ripmean.amp(1,6,:)) squeeze(ripmean.amp(2,6,:))];
+         squeeze(ripmean.amp(1,5,:)) squeeze(ripmean.amp(2,5,:))];
     
-     subplot(6,7,9:14)
+     subplot(6,6,8:12)
        [p,h,her] = PlotErrorBarN_SL(ampdat,...
                 'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
         h.FaceColor = 'flat';
@@ -176,11 +195,10 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
         h.CData(7,:) = [1 1 1]; h.CData(8,:) = [0 0 0];
         h.CData(10,:) = [1 1 1]; h.CData(11,:) = [0 0 0];
         h.CData(13,:) = [1 1 1]; h.CData(14,:) = [0 0 0];
-        h.CData(16,:) = [1 1 1]; h.CData(17,:) = [0 0 0];
         set(gca,'xticklabel',{[]})    
         set(h, 'LineWidth', 1);
         set(her, 'LineWidth', 1);
-        ylabel('Power');
+        ylabel('uV');
         % creating legend with hidden-fake data (hugly but effective)
         axP = get(gca,'Position');
         b2=bar([-2],[ 1],'FaceColor','flat');
@@ -192,9 +210,9 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
         
     freqdat = [squeeze(ripmean.freq(1,1,:)) squeeze(ripmean.freq(2,1,:)) nanfix squeeze(ripmean.freq(1,2,:)) squeeze(ripmean.freq(2,2,:)) nanfix ...
          squeeze(ripmean.freq(1,3,:)) squeeze(ripmean.freq(2,3,:)) nanfix squeeze(ripmean.freq(1,4,:)) squeeze(ripmean.freq(2,4,:)) nanfix ...
-         squeeze(ripmean.freq(1,5,:)) squeeze(ripmean.freq(2,5,:)) nanfix squeeze(ripmean.freq(1,6,:)) squeeze(ripmean.freq(2,6,:))];
+         squeeze(ripmean.freq(1,5,:)) squeeze(ripmean.freq(2,5,:))];
      
-    subplot(6,7,16:21)
+    subplot(6,6,14:18)
        [p,h,her] = PlotErrorBarN_SL(freqdat,...
                 'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
         h.FaceColor = 'flat';
@@ -203,7 +221,6 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
         h.CData(7,:) = [1 1 1]; h.CData(8,:) = [0 0 0];
         h.CData(10,:) = [1 1 1]; h.CData(11,:) = [0 0 0];
         h.CData(13,:) = [1 1 1]; h.CData(14,:) = [0 0 0];
-        h.CData(16,:) = [1 1 1]; h.CData(17,:) = [0 0 0];
         set(gca,'xticklabel',{[]})
         set(h, 'LineWidth', 1);
         set(her, 'LineWidth', 1);
@@ -211,9 +228,9 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
         
     durdat = [squeeze(ripmean.dur(1,1,:)) squeeze(ripmean.dur(2,1,:)) nanfix squeeze(ripmean.dur(1,2,:)) squeeze(ripmean.dur(2,2,:)) nanfix ...
              squeeze(ripmean.dur(1,3,:)) squeeze(ripmean.dur(2,3,:)) nanfix squeeze(ripmean.dur(1,4,:)) squeeze(ripmean.dur(2,4,:)) nanfix ...
-             squeeze(ripmean.dur(1,5,:)) squeeze(ripmean.dur(2,5,:)) nanfix squeeze(ripmean.dur(1,6,:)) squeeze(ripmean.dur(2,6,:))];
+             squeeze(ripmean.dur(1,5,:)) squeeze(ripmean.dur(2,5,:))];
     
-    subplot(6,7,23:28)
+    subplot(6,6,20:24)
        [p,h,her] = PlotErrorBarN_SL(durdat,...
                 'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
         h.FaceColor = 'flat';
@@ -222,7 +239,6 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
         h.CData(7,:) = [1 1 1]; h.CData(8,:) = [0 0 0];
         h.CData(10,:) = [1 1 1]; h.CData(11,:) = [0 0 0];
         h.CData(13,:) = [1 1 1]; h.CData(14,:) = [0 0 0];
-        h.CData(16,:) = [1 1 1]; h.CData(17,:) = [0 0 0];
         set(gca,'xticklabel',{[]})
         set(h, 'LineWidth', 1);
         set(her, 'LineWidth', 1);
@@ -230,9 +246,9 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
 
      globaldendat = [squeeze(ripmean.globalden(1,1,:)) squeeze(ripmean.globalden(2,1,:)) nanfix squeeze(ripmean.globalden(1,2,:)) squeeze(ripmean.globalden(2,2,:)) nanfix ...
          squeeze(ripmean.globalden(1,3,:)) squeeze(ripmean.globalden(2,3,:)) nanfix squeeze(ripmean.globalden(1,4,:)) squeeze(ripmean.globalden(2,4,:)) nanfix ...
-         squeeze(ripmean.globalden(1,5,:)) squeeze(ripmean.globalden(2,5,:)) nanfix squeeze(ripmean.globalden(1,6,:)) squeeze(ripmean.globalden(2,6,:))];
+         squeeze(ripmean.globalden(1,5,:)) squeeze(ripmean.globalden(2,5,:))];
     
-     subplot(6,7,30:35)
+     subplot(6,6,26:30)
        [p,h,her] = PlotErrorBarN_SL(globaldendat,...
                 'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
         h.FaceColor = 'flat';
@@ -241,7 +257,6 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
         h.CData(7,:) = [1 1 1]; h.CData(8,:) = [0 0 0];
         h.CData(10,:) = [1 1 1]; h.CData(11,:) = [0 0 0];
         h.CData(13,:) = [1 1 1]; h.CData(14,:) = [0 0 0];
-        h.CData(16,:) = [1 1 1]; h.CData(17,:) = [0 0 0];
         set(gca,'xticklabel',{[]})
         set(h, 'LineWidth', 1);
         set(her, 'LineWidth', 1);
@@ -249,9 +264,9 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
  
     localdendat = [squeeze(ripmean.localden(1,1,:)) squeeze(ripmean.localden(2,1,:)) nanfix squeeze(ripmean.localden(1,2,:)) squeeze(ripmean.localden(2,2,:)) nanfix ...
          squeeze(ripmean.localden(1,3,:)) squeeze(ripmean.localden(2,3,:)) nanfix squeeze(ripmean.localden(1,4,:)) squeeze(ripmean.localden(2,4,:)) nanfix ...
-         squeeze(ripmean.localden(1,5,:)) squeeze(ripmean.localden(2,5,:)) nanfix squeeze(ripmean.localden(1,6,:)) squeeze(ripmean.localden(2,6,:))];
+         squeeze(ripmean.localden(1,5,:)) squeeze(ripmean.localden(2,5,:))];
     
-     subplot(6,7,37:42)
+     subplot(6,6,32:36)
        [p,h,her] = PlotErrorBarN_SL(localdendat,...
                 'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
         h.FaceColor = 'flat';
@@ -260,9 +275,7 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
         h.CData(7,:) = [1 1 1]; h.CData(8,:) = [0 0 0];
         h.CData(10,:) = [1 1 1]; h.CData(11,:) = [0 0 0];
         h.CData(13,:) = [1 1 1]; h.CData(14,:) = [0 0 0];
-        h.CData(16,:) = [1 1 1]; h.CData(17,:) = [0 0 0];
-        set(gca,'Xtick',[2:3:18],'XtickLabel',{'NREM','REM','Wake','N1','N2','N3'});
-    %         set(gca, 'FontSize', 12);
+        set(gca,'xticklabel',{[]})
         set(h, 'LineWidth', 1);
         set(her, 'LineWidth', 1);
         ylabel('event/min');

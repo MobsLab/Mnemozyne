@@ -92,7 +92,7 @@ end
 set(0,'defaulttextinterpreter','latex');
 set(0,'DefaultTextFontname', 'Arial')
 set(0,'DefaultAxesFontName', 'Arial')
-set(0,'defaultTextFontSize',12)
+set(0,'defaultTextFontSize',14)
 set(0,'defaultAxesFontSize',12)
 
 %#####################################################################
@@ -171,9 +171,9 @@ for isubj=1:length(Dir.path)
     post_end = End(tdatpost{isubj}{1})/1e4/3600;
     
     if ss(isubj)
-        colori = {[0.5 0.3 1], [1 0.5 1], [0.8 0 0.7], [0.1 0.7 0], [0.5 0.2 0.1]}; %substage color
+        colori = {[.2 .6 1], [.0 .4 1], [.0 .0 1], [.6 .0 1], [1 .4 .4]}; %substage color
     else
-        colori = {[0.5 0.3 1], [0.1 0.7 0], [0.5 0.2 0.1]}; %substage color
+        colori = {[0 0 0], [.85 .85 .85], [.95 .95 .95]}; %substage color
     end
 
     %prep figure data - barplot
@@ -194,9 +194,9 @@ for isubj=1:length(Dir.path)
     %% FIGURE by session
     % hypnogram
     supertit = ['Mouse ' num2str(subj(isubj))  ' - Hypnograms'];
-    figure('Color',[1 1 1], 'rend','painters','pos',[10 10 1500 800],'Name', supertit, 'NumberTitle','off')
+    figure('Color',[1 1 1], 'rend','painters','pos',[10 10 1500 1200],'Name', supertit, 'NumberTitle','off')
         %pre
-        subplot(2,2,1:2)
+        subplot(3,2,1:2)
             plot(Range(pre_SleepStages,'s')/3600,Data(pre_SleepStages),'k')
             hold on
             for ep=1:length(pre_Epochs)
@@ -209,10 +209,10 @@ for isubj=1:length(Dir.path)
             ylim([0.5 ssnb+0.5])
             ylabel_substage = ssnames;
             set(gca,'Ytick',ytick_substage,'YTickLabel',ylabel_substage)
-            title('Pre-Sleep'); 
+            title('Pre-sleep','FontSize',14,'FontWeight','bold'); 
         
         %post
-        subplot(2,2,3:4)
+        subplot(3,2,3:4)
             plot(Range(post_SleepStages,'s')/3600,Data(post_SleepStages),'k') 
             hold on
             for ep=1:length(post_Epochs)
@@ -229,7 +229,7 @@ for isubj=1:length(Dir.path)
             ylim([0.5 ssnb+0.5])
             ylabel_substage = ssnames;
             set(gca,'Ytick',ytick_substage,'YTickLabel',ylabel_substage)
-            title('Post-Sleep'); 
+            title('Post-sleep','FontSize',14,'FontWeight','bold'); 
 
             if stim
                 %annotation
@@ -238,23 +238,34 @@ for isubj=1:length(Dir.path)
                 annotation('textbox',dim,'String',str,'Color','black','FitBoxToText','on');
             end
 
-    %save figure
-    if save_data
-        print([dir_out 'M' num2str(subj(isubj)) '_Hypnogram_stims'], '-dpng', '-r300');
-    end
-    
-    %% compare sessions
-    %Sleep stages
-    supertit = ['Mouse ' num2str(subj(isubj)) ' - Sleep stages percentage during sessions'];
-    figure('Color',[1 1 1], 'rend','painters','pos',[1 1 600 400],'Name', supertit, 'NumberTitle','off')
-        b = bar(stagperc);
-        for ibar=1:size(stagperc,2)
-            b(ibar).FaceColor = colori{ibar};
-        end
-        set(gca,'XTickLabel',{'Pre-sleep','Post-sleep'})
-        xlabel('Stages')
-        ylabel('%')
-        legend(ssnames)
+        subplot(3,2,5)
+            b1 = bar(stagdur/(1E4*60));
+            for ibar=1:size(stagdur,2)
+                b1(ibar).FaceColor = colori{ibar};
+            end
+            title('Stages duration (min)','FontSize',14)
+            set(gca,'XTickLabel',{'Pre-sleep','Post-sleep'})
+            xlabel('Stages')
+            ylabel('min')
+            
+        subplot(3,2,6)
+            b2 = bar(stagperc);
+            for ibar=1:size(stagperc,2)
+                b2(ibar).FaceColor = colori{ibar};
+            end
+            title('Stages duration percentage','FontSize',14)
+            set(gca,'XTickLabel',{'Pre-sleep','Post-sleep'})
+            xlabel('Stages')
+            ylabel('%')
+            % creating legend with hidden-fake data
+            hold on
+            axP = get(gca,'Position');
+            c1=bar(nan(2,5));
+            for i=1:length(ssnames)
+                c1(i).FaceColor=colori{i};
+            end
+            legend(c1,ssnames,'location','EastOutside');
+            set(gca, 'Position', axP)
 
     %save figure
     if save_data

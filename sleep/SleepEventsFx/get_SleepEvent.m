@@ -1,4 +1,4 @@
-function [evt, evtmean] = get_SleepEvent(dirPath,evtType,sEpoch,subst)
+function [evt, evtmean, evtdif] = get_SleepEvent(dirPath,evtType,sEpoch,subst)
 
 %==========================================================================
 % Details: get sleep stages epochs for SleepEvents analyses
@@ -77,7 +77,17 @@ for isuj=1:length(dirPath)
             end
         end
     end
+    
+    %calculate diff
+    for ist=1:size(evt.amp,3)
+        evtdif.amp(ist,isuj) = ((evtmean.amp(2,ist,isuj)-evtmean.amp(1,ist,isuj))/evtmean.amp(1,ist,isuj))*100;
+        evtdif.freq(ist,isuj) = ((evtmean.freq(2,ist,isuj)-evtmean.freq(1,ist,isuj))/evtmean.freq(1,ist,isuj))*100;
+        evtdif.dur(ist,isuj) = ((evtmean.dur(2,ist,isuj)-evtmean.dur(1,ist,isuj))/evtmean.dur(1,ist,isuj))*100;
+        evtdif.globalden(ist,isuj) = ((evtmean.globalden(2,ist,isuj)-evtmean.globalden(1,ist,isuj))/evtmean.globalden(1,ist,isuj))*100;
+        evtdif.localden(ist,isuj) = ((evtmean.localden(2,ist,isuj)-evtmean.localden(1,ist,isuj))/evtmean.localden(1,ist,isuj))*100;
+    end
 end
 evt.params.orderName = {'mouse','session (pre/post)','sleep stage'};
 evtmean.params.orderName = {'session (pre/post)','sleep stage','mouse','data'};
+evtdif.params.orderName = {'sleep stage','data per mouse'};
 end

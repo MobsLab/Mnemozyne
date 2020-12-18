@@ -1,2 +1,10 @@
+
+# PathForExperiments
+PathForExperimentsERC_SL.m
 PathForExperimentsERC_Dima.m
+
+# Saving functions
 ChooseFolderForFigures_DB.m
+
+# Matlab autosave extension
+*.m~

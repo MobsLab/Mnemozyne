@@ -1,9 +1,14 @@
-function sam_sleep_prevspost(expe, subj, varargin)
+function figH = sam_sleep_prevspost(expe, subj, varargin)
 %==========================================================================
 % Details: Output details about sleep pre and post sessions
 %
 % INPUTS:
-%       - scoring_method: sleep scoring method: 'obgamma' or 'accelero' 
+%       - expe              Name of the experiment in PathForExperiment
+%       - subj              Mice number to analyze
+%      
+%   OPTIONS:
+%       - stim              Default: 0; Put to 1 if you have stim during
+%                           sleep
 %
 % OUTPUT:
 %       - figure including:
@@ -13,11 +18,9 @@ function sam_sleep_prevspost(expe, subj, varargin)
 %           (mean)
 %
 % NOTES:
-%       - Does not work with NREM substage. Another script will have to be
-%       written
 %
 %   Original written by Samuel Laventure - 02-07-2019
-%   Modified on by SL - 29-11-2019
+%   Modified on by SL - 29-11-2019, 2020-12
 %      
 %  see also, FindNREMfeatures, SubstagesScoring, MakeIDSleepData,PlotIDSleepData
 %==========================================================================
@@ -33,16 +36,6 @@ for i = 1:2:length(varargin)
             if stim~=0 && stim ~=1
                 error('Incorrect value for property ''stim''.');
             end
-        case 'recompute'
-            recompute = varargin{i+1};
-            if recompute~=0 && recompute ~=1
-                error('Incorrect value for property ''recompute''.');
-            end
-        case 'save_data'
-            save_data = varargin{i+1};
-            if save_data~=0 && save_data ~=1
-                error('Incorrect value for property ''save_data''.');
-            end
         otherwise
             error(['Unknown property ''' num2str(varargin{i}) '''.']);
     end
@@ -53,31 +46,18 @@ end
 if ~exist('stim','var')
     stim=0;
 end
-%recompute?
-if ~exist('recompute','var')
-    recompute=0;
-end
-%save_data?
-if ~exist('save_data','var')
-    save_data=0;
-end
 
 
 %% Parameters
-% Directory to save and name of the figure to save
-dir_out = [dropbox 'DataSL/StimMFBWake/Sleep/' date '/'];
-% dir_out = [dropbox '/DataSL/Novel/Sleep/Novel/' date '/'];
-
-%set folders
-if ~exist(dir_out,'dir')
-    mkdir(dir_out);
-end
-
-%% Get prep data
-% subj = [994]; % MFBStimWake
-
 % Get directories
-Dir = PathForExperimentsERC_SL(expe);
+if strcmp(expe,'StimMFBWake')
+    Dir = PathForExperimentsERC_SL(expe);
+elseif strcmp(expe,'UMazePAG') 
+    Dir = PathForExperimentsERC_Dima(expe);
+else    
+    warning('Exited. Verify experiment name');
+    return
+end
 Dir = RestrictPathForExperiment(Dir,'nMice', subj);
 
 % get sessions id and timepoints
@@ -89,23 +69,15 @@ end
 [id_post tdatpost] = RestrictSession(Dir,'PostSleep');
     
 % set text format
-set(0,'defaulttextinterpreter','latex');
-set(0,'DefaultTextFontname', 'Arial')
-set(0,'DefaultAxesFontName', 'Arial')
-set(0,'defaultTextFontSize',14)
-set(0,'defaultAxesFontSize',12)
+% set(0,'defaulttextinterpreter','latex');
+% set(0,'DefaultTextFontname', 'Arial')
+% set(0,'DefaultAxesFontName', 'Arial')
+% set(0,'defaultTextFontSize',14)
+% set(0,'defaultAxesFontSize',12)
 
 %#####################################################################
-%#
 %#                           M A I N
-%#
 %#####################################################################
-
-%init var
-rem = [];
-nrem = [];
-wake = [];
-
 % check if all mice have substages processed and load substaging
 for isuj=1:length(Dir.path)
     cd(Dir.path{1,isuj}{1})
@@ -191,10 +163,14 @@ for isubj=1:length(Dir.path)
     stagdur_part(isubj,:,:) = stagdur;
     stagperc_part(isubj,:,:) = stagperc;
     
-    %% FIGURE by session
+    %%
+    %#####################################################################
+    %#             F I G U R E S    B Y   S E S S I O N S
+    %#####################################################################
     % hypnogram
     supertit = ['Mouse ' num2str(subj(isubj))  ' - Hypnograms'];
-    figure('Color',[1 1 1], 'rend','painters','pos',[10 10 1500 1200],'Name', supertit, 'NumberTitle','off')
+    figH.SleepArch_single{isubj} = figure('Color',[1 1 1], 'rend','painters','pos', ...
+        [10 10 1650 1200],'Name', supertit, 'NumberTitle','off');
         %pre
         subplot(3,2,1:2)
             plot(Range(pre_SleepStages,'s')/3600,Data(pre_SleepStages),'k')
@@ -239,131 +215,131 @@ for isubj=1:length(Dir.path)
             end
 
         subplot(3,2,5)
-            b1 = bar(stagdur/(1E4*60));
-            for ibar=1:size(stagdur,2)
-                b1(ibar).FaceColor = colori{ibar};
-            end
+            b1 = bar(stagdur'/(1E4*60),1,'FaceColor','flat');
+            b1(1,1).CData = [1 1 1];
+            b1(1,2).CData = [0 0 0];
+            xtips1 = b1(1).XData-.05;
+            ytips1 = b1(1).YData;
+            labels1 = string(round(b1(1).YData,1));
+            xtips2 = b1(2).XData+.05;
+            ytips2 = b1(2).YData;
+            labels2 = string(round(b1(2).YData,1));
+            text(xtips1,ytips1,labels1,'HorizontalAlignment','right',...
+                'VerticalAlignment','bottom','Color',[.6 .6 .6])
+            text(xtips2,ytips2,labels2,'HorizontalAlignment','left',...
+                'VerticalAlignment','bottom','Color','black')
             title('Stages duration (min)','FontSize',14)
-            set(gca,'XTickLabel',{'Pre-sleep','Post-sleep'})
+            set(gca,'XTickLabel',ssnames)
             xlabel('Stages')
             ylabel('min')
-            
-        subplot(3,2,6)
-            b2 = bar(stagperc);
-            for ibar=1:size(stagperc,2)
-                b2(ibar).FaceColor = colori{ibar};
-            end
-            title('Stages duration percentage','FontSize',14)
-            set(gca,'XTickLabel',{'Pre-sleep','Post-sleep'})
-            xlabel('Stages')
-            ylabel('%')
+            makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)
             % creating legend with hidden-fake data
             hold on
             axP = get(gca,'Position');
-            c1=bar(nan(2,5));
-            for i=1:length(ssnames)
-                c1(i).FaceColor=colori{i};
-            end
-            legend(c1,ssnames,'location','EastOutside');
+            c1=bar(nan(2,5),'FaceColor','flat');
+            c1(1,1).CData = [1 1 1];
+            c1(1,2).CData = [0 0 0];
+            legend(c1,{'Pre-sleep','Post-sleep'},'location','WestOutside');
             set(gca, 'Position', axP)
-
-    %save figure
-    if save_data
-        print([dir_out 'M' num2str(subj(isubj)) '_sleeparch_prepost'], '-dpng', '-r300');
-    end
+            
+        subplot(3,2,6)
+            b2 = bar(stagperc',1,'FaceColor','flat');
+            b2(1,1).CData = [1 1 1];
+            b2(1,2).CData = [0 0 0];
+            xtips1 = b2(1).XData-.05;
+            ytips1 = b2(1).YData;
+            labels1 = string(round(b2(1).YData,1));
+            xtips2 = b2(2).XData+.05;
+            ytips2 = b2(2).YData;
+            labels2 = string(round(b2(2).YData,1));
+            text(xtips1,ytips1,labels1,'HorizontalAlignment','right',...
+                'VerticalAlignment','bottom','Color',[.6 .6 .6])
+            text(xtips2,ytips2,labels2,'HorizontalAlignment','left',...
+                'VerticalAlignment','bottom','Color','black')
+            title('Stages duration percentage','FontSize',14)
+            set(gca,'XTickLabel',ssnames)
+            xlabel('Stages')
+            ylabel('%')
+            makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)
 end  
- 
-%%  prep data for all mice
-% percentage
-ii=1;
-nremall(ii,1:isubj) = squeeze(stagperc_part(:,1,1));
-nremall(ii+1,1:isubj) = squeeze(stagperc_part(:,2,1));
-nremall(ii+2,1:isubj) = nan;
-remall(ii,1:isubj) = squeeze(stagperc_part(:,1,2));
-remall(ii+1,1:isubj) = squeeze(stagperc_part(:,2,2));
-remall(ii+2,1:isubj) = nan;
-wakeall(ii,1:isubj) = squeeze(stagperc_part(:,1,3));
-wakeall(ii+1,1:isubj) = squeeze(stagperc_part(:,2,3));
-wakeall(ii+2,1:isubj) = nan;
+%  
+% %%  prep data for all mice
+% % percentage
+% ii=1;
+% nremall(ii,1:isubj) = squeeze(stagperc_part(:,1,1));
+% nremall(ii+1,1:isubj) = squeeze(stagperc_part(:,2,1));
+% nremall(ii+2,1:isubj) = nan;
+% remall(ii,1:isubj) = squeeze(stagperc_part(:,1,2));
+% remall(ii+1,1:isubj) = squeeze(stagperc_part(:,2,2));
+% remall(ii+2,1:isubj) = nan;
+% wakeall(ii,1:isubj) = squeeze(stagperc_part(:,1,3));
+% wakeall(ii+1,1:isubj) = squeeze(stagperc_part(:,2,3));
+% wakeall(ii+2,1:isubj) = nan;
+% 
+% % duration
+% ii=1;
+% nremalldur(ii,1:isubj) = squeeze(stagdur_part(:,1,1))/(1E4*60);
+% nremalldur(ii+1,1:isubj) = squeeze(stagdur_part(:,2,1))/(1E4*60);
+% nremalldur(ii+2,1:isubj) = nan;
+% remalldur(ii,1:isubj) = squeeze(stagdur_part(:,1,2))/(1E4*60);
+% remalldur(ii+1,1:isubj) = squeeze(stagdur_part(:,2,2))/(1E4*60);
+% remalldur(ii+2,1:isubj) = nan;
+% wakealldur(ii,1:isubj) = squeeze(stagdur_part(:,1,3))/(1E4*60);
+% wakealldur(ii+1,1:isubj) = squeeze(stagdur_part(:,2,3))/(1E4*60);
+% wakealldur(ii+2,1:isubj) = nan;
+% 
+% save([dir_out 'sleeparch.mat'],'nremall','remall','wakeall','nremalldur','remalldur','wakealldur');
+% 
+% 
+% %% FIGURE COMPARAISON
+%     %Percentage pre vs post all mice
+%     supertit = 'Sleep stages percentage pre vs post';
+%     
+%     figure('Color',[1 1 1], 'rend','painters','pos',[1 1 600 400],'Name', supertit, 'NumberTitle','off')
+%         [p,h, her] = PlotErrorBarN_SL([nremall' remall' wakeall'],...
+%             'barwidth', .85, 'newfig', 0,...
+%             'showPoints',0,'colorpoints',0,'barcolors',[.3 .3 .3]);    
+%         set(gca,'Xtick',[1:3:ssnb*3],'XtickLabel',{'           NREM','           REM','          WAKE'});
+%         h.FaceColor = 'flat';
+%         h.CData([2:3:ssnb*3],:) = repmat([1 1 1],3,1);
+%         xlabel('Stages')
+%         ylabel('%')
+%         hold on
+%         % creating legend with hidden-fake data (hugly but effective)
+%             b2=bar([-2],[ 1],'FaceColor','flat');
+%             b1=bar([-3],[ 1],'FaceColor','flat');
+%             b1.CData(1,:) = repmat([.3 .3 .3],1);
+%             b2.CData(1,:) = repmat([1 1 1],1);
+%             legend([b1 b2],{'Pre-sleep','Post-sleep'})
+%     %save figure
+%     if save_data
+%         print([dir_out 'all_sleeparch_perc_prepost'], '-dpng', '-r300');
+%     end
+%     
+%     % Duration pre vs post all mice
+%     supertit = 'Sleep stages duration pre vs post';
+%     
+%     figure('Color',[1 1 1], 'rend','painters','pos',[1 1 600 400],'Name', supertit, 'NumberTitle','off')
+%         [p,h, her] = PlotErrorBarN_SL([nremalldur' remalldur' wakealldur'],...
+%             'barwidth', 0.85, 'newfig', 0,...
+%             'showPoints',0,'colorpoints',0,'barcolors',[.3 .3 .3]);      
+%         set(gca,'Xtick',[1:3:ssnb*3],'XtickLabel',{'           NREM','           REM','          WAKE'});
+%         h.FaceColor = 'flat';
+%         h.CData([2:3:ssnb*3],:) = repmat([1 1 1],3,1);
+%         xlabel('Stages')
+%         ylabel('Duration (min)')
+%         hold on
+%         % creating legend with hidden-fake data (hugly but effective)
+%             b2=bar([-2],[ 1],'FaceColor','flat');
+%             b1=bar([-3],[ 1],'FaceColor','flat');
+%             b1.CData(1,:) = repmat([.3 .3 .3],1);
+%             b2.CData(1,:) = repmat([1 1 1],1);
+%             legend([b1 b2],{'Pre-sleep','Post-sleep'})
+%     %save figure
+%     if save_data
+%         print([dir_out 'all_sleeparch_dur_prepost'], '-dpng', '-r300');
+%     end
 
-% duration
-ii=1;
-nremalldur(ii,1:isubj) = squeeze(stagdur_part(:,1,1))/(1E4*60);
-nremalldur(ii+1,1:isubj) = squeeze(stagdur_part(:,2,1))/(1E4*60);
-nremalldur(ii+2,1:isubj) = nan;
-remalldur(ii,1:isubj) = squeeze(stagdur_part(:,1,2))/(1E4*60);
-remalldur(ii+1,1:isubj) = squeeze(stagdur_part(:,2,2))/(1E4*60);
-remalldur(ii+2,1:isubj) = nan;
-wakealldur(ii,1:isubj) = squeeze(stagdur_part(:,1,3))/(1E4*60);
-wakealldur(ii+1,1:isubj) = squeeze(stagdur_part(:,2,3))/(1E4*60);
-wakealldur(ii+2,1:isubj) = nan;
-
-save([dir_out 'sleeparch.mat'],'nremall','remall','wakeall','nremalldur','remalldur','wakealldur');
-
-
-%% FIGURE COMPARAISON
-    %Percentage pre vs post all mice
-    supertit = 'Sleep stages percentage pre vs post';
-    
-    figure('Color',[1 1 1], 'rend','painters','pos',[1 1 600 400],'Name', supertit, 'NumberTitle','off')
-        [p,h, her] = PlotErrorBarN_SL([nremall' remall' wakeall'],...
-            'barwidth', .85, 'newfig', 0,...
-            'showPoints',0,'colorpoints',0,'barcolors',[.3 .3 .3]);    
-        set(gca,'Xtick',[1:3:ssnb*3],'XtickLabel',{'           NREM','           REM','          WAKE'});
-        h.FaceColor = 'flat';
-        h.CData([2:3:ssnb*3],:) = repmat([1 1 1],3,1);
-        xlabel('Stages')
-        ylabel('%')
-        hold on
-        % creating legend with hidden-fake data (hugly but effective)
-            b2=bar([-2],[ 1],'FaceColor','flat');
-            b1=bar([-3],[ 1],'FaceColor','flat');
-            b1.CData(1,:) = repmat([.3 .3 .3],1);
-            b2.CData(1,:) = repmat([1 1 1],1);
-            legend([b1 b2],{'Pre-sleep','Post-sleep'})
-    %save figure
-    if save_data
-        print([dir_out 'all_sleeparch_perc_prepost'], '-dpng', '-r300');
-    end
-    
-    % Duration pre vs post all mice
-    supertit = 'Sleep stages duration pre vs post';
-    
-    figure('Color',[1 1 1], 'rend','painters','pos',[1 1 600 400],'Name', supertit, 'NumberTitle','off')
-        [p,h, her] = PlotErrorBarN_SL([nremalldur' remalldur' wakealldur'],...
-            'barwidth', 0.85, 'newfig', 0,...
-            'showPoints',0,'colorpoints',0,'barcolors',[.3 .3 .3]);      
-        set(gca,'Xtick',[1:3:ssnb*3],'XtickLabel',{'           NREM','           REM','          WAKE'});
-        h.FaceColor = 'flat';
-        h.CData([2:3:ssnb*3],:) = repmat([1 1 1],3,1);
-        xlabel('Stages')
-        ylabel('Duration (min)')
-        hold on
-        % creating legend with hidden-fake data (hugly but effective)
-            b2=bar([-2],[ 1],'FaceColor','flat');
-            b1=bar([-3],[ 1],'FaceColor','flat');
-            b1.CData(1,:) = repmat([.3 .3 .3],1);
-            b2.CData(1,:) = repmat([1 1 1],1);
-            legend([b1 b2],{'Pre-sleep','Post-sleep'})
-    %save figure
-    if save_data
-        print([dir_out 'all_sleeparch_dur_prepost'], '-dpng', '-r300');
-    end
-    
-
-    function [rem, nrem, wake] = get_sleepscoring(isubj, sscoring, tdat)
-        rem = and(sscoring.REMEpoch, tdat{isubj}{1});
-        nrem = and(sscoring.SWSEpoch, tdat{isubj}{1});
-        wake = and(sscoring.Wake, tdat{isubj}{1});
-    end
-    
-    function [n1, n2, n3, rem, wake] = get_subscoring(substg, tdat)
-        n1 = and(substg{1,1},tdat);
-        n2 = and(substg{1,2},tdat);
-        n3 = and(substg{1,3},tdat);
-        rem = and(substg{1,4},tdat);
-        wake = and(substg{1,5},tdat);
-    end
 
 end
 

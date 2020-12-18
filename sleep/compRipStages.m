@@ -209,8 +209,8 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
         axP = get(gca,'Position');
         b2=bar([-2],[ 1],'FaceColor','flat');
         b1=bar([-3],[ 1],'FaceColor','flat');
-        b1.CData(1,:) = repmat([0 0 0],1);
-        b2.CData(1,:) = repmat([1 1 1],1);
+        b1.CData(1,:) = repmat([1 1 1],1);
+        b2.CData(1,:) = repmat([0 0 0],1);
         legend([b1 b2],{'pre','post'},'Location','WestOutside')
         set(gca, 'Position', axP)
         

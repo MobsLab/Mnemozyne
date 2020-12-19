@@ -19,8 +19,12 @@ for isuj=1:length(dirPath)
     switch evtType 
         case 'Ripples'
             load([dirPath{isuj}{1} evtType '.mat'], evtType,[evtType 'Epoch'],'T');
+            evtEpoch = RipplesEpoch;
+            evtData = Ripples;
         case 'Spindles'
             load([dirPath{isuj}{1} evtType '.mat'], evtType,[evtType 'Epoch_PFCx'],'T');
+            evtEpoch = SpindlesEpoch_PFCx;
+            evtData = Spindles;
     end
     for isess=1:2
         istage = 1;
@@ -38,14 +42,14 @@ for isuj=1:length(dirPath)
                     evtmean.localden(isess,3:5,isuj) = nan;
                     ist=7; istage=6;
                 end
-                evt.epoch{isuj,isess,istage} = and(RipplesEpoch,sEpoch{isuj}{isess,istage});
+                evt.epoch{isuj,isess,istage} = and(evtEpoch,sEpoch{isuj}{isess,istage});
                 % identify event indexes
-                idx = find(ismember(Start(RipplesEpoch),Start(evt.epoch{isuj,isess,istage})));
-                ripstart = Start(and(evt.epoch{isuj,isess,istage},sEpoch{isuj}{isess,istage}));
+                idx = find(ismember(Start(evtEpoch),Start(evt.epoch{isuj,isess,istage})));
+                evtstart = Start(and(evt.epoch{isuj,isess,istage},sEpoch{isuj}{isess,istage}));
 
-                evt.amp{isuj,isess,istage} = Ripples(idx,6);
-                evt.freq{isuj,isess,istage} = Ripples(idx,5); 
-                evt.dur{isuj,isess,istage} = Ripples(idx,4); 
+                evt.amp{isuj,isess,istage} = evtData(idx,6);
+                evt.freq{isuj,isess,istage} = evtData(idx,5); 
+                evt.dur{isuj,isess,istage} = evtData(idx,4); 
                 evt.waveforms{isuj,isess,istage} = T(idx,1:size(T,2));
 
                 % calculate densities
@@ -55,8 +59,8 @@ for isuj=1:length(dirPath)
                     % global density
                     evt.globalden{isuj,isess,istage} = numss/sesslen;
                     % local density
-                    for ievt=1:length(ripstart)
-                        evt.localden{isuj,isess,istage}(ievt) = length(find(ripstart<ripstart(ievt)+30*1E4 & ripstart>ripstart(ievt)-30*1E4));
+                    for ievt=1:length(evtstart)
+                        evt.localden{isuj,isess,istage}(ievt) = length(find(evtstart<evtstart(ievt)+30*1E4 & evtstart>evtstart(ievt)-30*1E4));
                     end
                 else
                     evt.globalden{isuj,isess,istage} = nan;

@@ -20,7 +20,7 @@ function [figH] = compSpindleStages(expe, mice_num)
 %==========================================================================
 
 %% Parameters
-if strcmp(expe,'StimMFBWake')
+if strcmp(expe,'StimMFBWake') || strcmp(expe,'Novel')
     Dir = PathForExperimentsERC_SL(expe);
 elseif strcmp(expe,'UMazePAG') 
     Dir = PathForExperimentsERC_Dima(expe);
@@ -38,8 +38,8 @@ Dir = RestrictPathForExperiment(Dir, 'nMice', mice_num);
 % set(0,'defaultAxesFontSize',12)
 
 % var init
-stageName = {'NREM','Wake','N1','N2','N3','Sleep'};
-sstag = [1 4 5];
+stageName = {'NREM','REM','Wake','N1','N2','N3','Sleep'};
+sstag = [1 5 6];
 %%
 %#####################################################################
 %#                           M  A  I  N
@@ -125,6 +125,8 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 1500],'N
             'FitBoxToText','off','EdgeColor','none'); 
         a2.FontSize = 11;        
     end
+    
+    % plot waves and bars
     for istage=1:length(sstag)
         if ~(sum(sum(isnan(spimean.waveforms(:,sstag(istage),:,:)))) == ...
                 size(spimean.waveforms(:,sstag(istage),:,:),4)*2*size(spimean.waveforms(:,sstag(istage),:,:),3))
@@ -189,8 +191,8 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 1500],'N
     end
     
     ampdat = [squeeze(spimean.amp(1,1,:)) squeeze(spimean.amp(2,1,:)) nanfix  ...
-         squeeze(spimean.amp(1,4,:)) squeeze(spimean.amp(2,4,:)) nanfix ...
-         squeeze(spimean.amp(1,5,:)) squeeze(spimean.amp(2,5,:))];
+         squeeze(spimean.amp(1,5,:)) squeeze(spimean.amp(2,5,:)) nanfix ...
+         squeeze(spimean.amp(1,6,:)) squeeze(spimean.amp(2,6,:))];
     
      subplot(6,4,6:8)
        [p,h,her] = PlotErrorBarN_SL(ampdat,...
@@ -215,8 +217,8 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 1500],'N
         set(gca, 'Position', axP)
         
     freqdat = [squeeze(spimean.freq(1,1,:)) squeeze(spimean.freq(2,1,:)) nanfix ...
-         squeeze(spimean.freq(1,4,:)) squeeze(spimean.freq(2,4,:)) nanfix ...
-         squeeze(spimean.freq(1,5,:)) squeeze(spimean.freq(2,5,:))];
+         squeeze(spimean.freq(1,5,:)) squeeze(spimean.freq(2,5,:)) nanfix ...
+         squeeze(spimean.freq(1,6,:)) squeeze(spimean.freq(2,6,:))];
      
     subplot(6,4,10:12)
        [p,h,her] = PlotErrorBarN_SL(freqdat,...
@@ -231,8 +233,9 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 1500],'N
         ylabel('Hz');
         makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)
         
-    durdat = [squeeze(spimean.dur(1,1,:)) squeeze(spimean.dur(2,1,:)) nanfix squeeze(spimean.dur(1,4,:)) squeeze(spimean.dur(2,4,:)) nanfix ...
-             squeeze(spimean.dur(1,5,:)) squeeze(spimean.dur(2,5,:))];
+    durdat = [squeeze(spimean.dur(1,1,:)) squeeze(spimean.dur(2,1,:)) nanfix ...
+            squeeze(spimean.dur(1,5,:)) squeeze(spimean.dur(2,5,:)) nanfix ...
+            squeeze(spimean.dur(1,6,:)) squeeze(spimean.dur(2,6,:))];
     
     subplot(6,4,14:16)
        [p,h,her] = PlotErrorBarN_SL(durdat,...
@@ -247,8 +250,9 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 1500],'N
         ylabel('sec');
         makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)
         
-     globaldendat = [squeeze(spimean.globalden(1,1,:)) squeeze(spimean.globalden(2,1,:)) nanfix squeeze(spimean.globalden(1,4,:)) squeeze(spimean.globalden(2,4,:)) nanfix ...
-         squeeze(spimean.globalden(1,5,:)) squeeze(spimean.globalden(2,5,:))];
+     globaldendat = [squeeze(spimean.globalden(1,1,:)) squeeze(spimean.globalden(2,1,:)) nanfix ...
+         squeeze(spimean.globalden(1,5,:)) squeeze(spimean.globalden(2,5,:)) nanfix ...
+         squeeze(spimean.globalden(1,6,:)) squeeze(spimean.globalden(2,6,:))];
     
      subplot(6,4,18:20)
        [p,h,her] = PlotErrorBarN_SL(globaldendat,...
@@ -263,8 +267,9 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 1500],'N
         ylabel('event/sec');
         makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)
         
-    localdendat = [squeeze(spimean.localden(1,1,:)) squeeze(spimean.localden(2,1,:)) nanfix squeeze(spimean.localden(1,4,:)) squeeze(spimean.localden(2,4,:)) nanfix ...
-         squeeze(spimean.localden(1,5,:)) squeeze(spimean.localden(2,5,:))];
+    localdendat = [squeeze(spimean.localden(1,1,:)) squeeze(spimean.localden(2,1,:)) nanfix ...
+        squeeze(spimean.localden(1,5,:)) squeeze(spimean.localden(2,5,:)) nanfix ...
+        squeeze(spimean.localden(1,6,:)) squeeze(spimean.localden(2,6,:))];
     
      subplot(6,4,22:24)
        [p,h,her] = PlotErrorBarN_SL(localdendat,...
@@ -305,8 +310,8 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1200 800],'Name
         h.CData(3,:) = [.2 .2 .2];
         set(gca,'xticklabel',{[]})    
         ylabel({'% change','in uV'});
-        ymin = min(min(spidif.amp(1:5,:)));
-        ymax = max(max(spidif.amp(1:5,:)));
+        ymin = min(min(spidif.amp(1:6,:)));
+        ymax = max(max(spidif.amp(1:6,:)));
         if sign(ymin)>0, ymin=0; else ymin=ymin*1.15; end
         if sign(ymax)>0, ymax=ymax*1.15; else ymax=0; end    
         ylim([ymin ymax])
@@ -333,8 +338,8 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1200 800],'Name
         h.CData(3,:) = [.2 .2 .2];
         set(gca,'xticklabel',{[]})    
         ylabel({'% change','in Hz'});
-        ymin = min(min(spidif.freq(1:5,:)));
-        ymax = max(max(spidif.freq(1:5,:)));
+        ymin = min(min(spidif.freq(1:6,:)));
+        ymax = max(max(spidif.freq(1:6,:)));
         if sign(ymin)>0, ymin=0; else ymin=ymin*1.15; end
         if sign(ymax)>0, ymax=ymax*1.15; else ymax=0; end    
         ylim([ymin ymax])
@@ -350,8 +355,8 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1200 800],'Name
         h.CData(3,:) = [.2 .2 .2];
         set(gca,'xticklabel',{[]})    
         ylabel({'% change','in sec'});
-        ymin = min(min(spidif.dur(1:5,:)));
-        ymax = max(max(spidif.dur(1:5,:)));
+        ymin = min(min(spidif.dur(1:6,:)));
+        ymax = max(max(spidif.dur(1:6,:)));
         if sign(ymin)>0, ymin=0; else ymin=ymin*1.15; end
         if sign(ymax)>0, ymax=ymax*1.15; else ymax=0; end    
         ylim([ymin ymax])
@@ -367,8 +372,8 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1200 800],'Name
         h.CData(3,:) = [.2 .2 .2];
         set(gca,'xticklabel',{[]})    
         ylabel({'% change','in spi/sec'});
-        ymin = min(min(spidif.globalden(1:5,:)));
-        ymax = max(max(spidif.globalden(1:5,:)));
+        ymin = min(min(spidif.globalden(1:6,:)));
+        ymax = max(max(spidif.globalden(1:6,:)));
         if sign(ymin)>0, ymin=0; else ymin=ymin*1.15; end
         if sign(ymax)>0, ymax=ymax*1.15; else ymax=0; end    
         ylim([ymin ymax])
@@ -385,8 +390,8 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1200 800],'Name
         set(gca,'xticklabel',{[]})    
         ylabel({'% change','in spi/min'});
         set(gca,'xtick',[1:3],'xticklabel',stageName(sstag)) 
-        ymin = min(min(spidif.localden(1:5,:)));
-        ymax = max(max(spidif.localden(1:5,:)));
+        ymin = min(min(spidif.localden(1:6,:)));
+        ymax = max(max(spidif.localden(1:6,:)));
         if sign(ymin)>0, ymin=0; else ymin=ymin*1.15; end
         if sign(ymax)>0, ymax=ymax*1.15; else ymax=0; end    
         ylim([ymin ymax])

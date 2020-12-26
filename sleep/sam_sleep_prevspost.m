@@ -50,7 +50,7 @@ end
 
 %% Parameters
 % Get directories
-if strcmp(expe,'StimMFBWake')
+if strcmp(expe,'StimMFBWake') || strcmp(expe,'Novel')
     Dir = PathForExperimentsERC_SL(expe);
 elseif strcmp(expe,'UMazePAG') 
     Dir = PathForExperimentsERC_Dima(expe);

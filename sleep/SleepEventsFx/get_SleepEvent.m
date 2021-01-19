@@ -17,22 +17,24 @@ function [evt, evtmean, evtdif] = get_SleepEvent(dirPath,evtType,sEpoch,subst)
 %==========================================================================
 for isuj=1:length(dirPath)
     switch evtType 
-        case 'Ripples'
-            load([dirPath{isuj}{1} evtType '.mat'], evtType,[evtType 'Epoch'],'T');
+        case 'ripples'
+            nameFile = 'Ripples';
+            load([dirPath{isuj}{1} nameFile '.mat'], evtType,[nameFile 'Epoch'],'T');
             evtEpoch = RipplesEpoch;
-            evtData = Ripples;
+            evtData = ripples;
         case 'Spindles'
             load([dirPath{isuj}{1} evtType '.mat'], evtType,[evtType 'Epoch_PFCx'],'T');
             evtEpoch = SpindlesEpoch_PFCx;
             evtData = Spindles;
     end
     for isess=1:2
-        istage = 1;
+        istage = 0;
         for ist=1:7
             %skip rem sleep in second position (no rip or spindles in rem)
             if ist==2
                 ist=ist+1;
             else
+                istage = istage+1;
                 if ~(subst(isuj)) && istage>3 % special case: skip if no substage
                     evtmean.amp(isess,3:5,isuj) = nan;
                     evtmean.freq(isess,3:5,isuj) = nan;
@@ -40,7 +42,7 @@ for isuj=1:length(dirPath)
                     evtmean.waveforms(isess,3:5,isuj,1:size(T,2)) = nan;
                     evtmean.globalden(isess,3:5,isuj) = nan;
                     evtmean.localden(isess,3:5,isuj) = nan;
-                    ist=7; istage=6;
+                    ist=7; istage=7;
                 end
                 evt.epoch{isuj,isess,istage} = and(evtEpoch,sEpoch{isuj}{isess,istage});
                 % identify event indexes
@@ -77,7 +79,6 @@ for isuj=1:length(dirPath)
                 end
                 evtmean.globalden(isess,istage,isuj) = evt.globalden{isuj,isess,istage}; 
                 evtmean.localden(isess,istage,isuj) = mean(evt.localden{isuj,isess,istage}); 
-                istage = istage+1;
             end
         end
     end

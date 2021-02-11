@@ -1,15 +1,20 @@
 function SwapShockSafeZones(dirs)
 %
-% This function swaps Shock and Safe zone (in case you swap wrongly during the experiment)
+% This function swaps Shock and Safe zone (in case you start wrongly during the experiment)
 %
 % INPUT
 %
-%     dirs      directories with behavResources.mat with wrong zones
+%     dirs      directories with behavResources.mat with wrong zones (cell)
 % 
 %  OUTPUT
 %
 %     It saves swapped variables in beahvResources.mat
-%
+% 
+%  EXAMPLE
+% 
+%     dirs = {/path/to/, 'path/to2/'};
+%     SwapShockSafeZones(dirs)
+% 
 % Coded by Dima Bryzgalov, MOBS team, Paris, France
 % 16/10/2020
 % github.com/bryzgalovdm

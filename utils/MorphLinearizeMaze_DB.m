@@ -31,7 +31,7 @@ for i=1:2:length(varargin)
     
     switch(lower(varargin{i}))
         
-        case 'ReDo'
+        case 'redo'
             redo = varargin{i+1};
             if length(redo)>1
                 error('Incorrect value for property ''ReDo'' (type ''help MorphLinearizeMaze_DB'' for details).');

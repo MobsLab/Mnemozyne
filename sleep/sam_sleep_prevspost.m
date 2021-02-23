@@ -67,26 +67,19 @@ catch
     [id_pre tdatpre] = RestrictSession(Dir,'PreSleep');
 end
 [id_post tdatpost] = RestrictSession(Dir,'PostSleep');
-    
-% set text format
-% set(0,'defaulttextinterpreter','latex');
-% set(0,'DefaultTextFontname', 'Arial')
-% set(0,'DefaultAxesFontName', 'Arial')
-% set(0,'defaultTextFontSize',14)
-% set(0,'defaultAxesFontSize',12)
-
+ 
 %#####################################################################
 %#                           M A I N
 %#####################################################################
 % check if all mice have substages processed and load substaging
-for isuj=1:length(Dir.path)
-    cd(Dir.path{1,isuj}{1})
+for isubj=1:length(Dir.path)
+    cd(Dir.path{1,isubj}{1})
     try
-        substg{isuj} = load([pwd '/SleepSubstages.mat'],'Epoch');
-        disp(['...loading substages for mouse ' num2str(isuj)])
-        ss(isuj) = 1;
+        substg{isubj} = load([pwd '/SleepSubstages.mat'],'Epoch');
+        disp(['...loading substages for mouse ' num2str(isubj)])
+        ss(isubj) = 1;
     catch
-        ss(isuj) = 0;
+        ss(isubj) = 0;
     end
 end
 
@@ -116,7 +109,7 @@ for isubj=1:length(Dir.path)
     LFP = load('LFPData/LFP1.mat', 'LFP');
     
     %pre 
-    if ss
+    if ss(isubj) 
         [pre_n1, pre_n2, pre_n3, pre_rem, pre_wake] = get_subscoring(substg{isubj}.Epoch,tdatpre{isubj}{1});
         pre_Epochs = {pre_n1,pre_n2,pre_n3,pre_rem,pre_wake};
     else
@@ -126,7 +119,7 @@ for isubj=1:length(Dir.path)
     pre_SleepStages = CreateSleepStages_tsd(pre_Epochs);
     
     %post
-    if ss
+    if ss(isubj) 
         [post_n1, post_n2, post_n3, post_rem, post_wake] = get_subscoring(substg{isubj}.Epoch,tdatpost{isubj}{1});
         post_Epochs = {post_n1,post_n2,post_n3,post_rem,post_wake};
     else
@@ -163,6 +156,23 @@ for isubj=1:length(Dir.path)
     stagdur_part(isubj,:,:) = stagdur;
     stagperc_part(isubj,:,:) = stagperc;
     
+    % get delta waveforms
+    if ss(isubj)
+        % load data
+        load([pwd '/DeltaWaves.mat'],'alldeltas_PFCx');
+        load([pwd '/ChannelsToAnalyse/PFCx_deltadeep.mat']);
+        load([pwd '/LFPData/LFP' num2str(channel) '.mat']);
+        
+        dsta = Start(alldeltas_PFCx);
+        dend = End(alldeltas_PFCx);
+        dmid = ((dend-dsta)/2 + dsta)/1e4;
+        
+        % extract waveforms
+        [Mpre{isubj} Tpre{isubj}] = PlotRipRaw(Restrict(LFP,tdatpre{isubj}{1}),dmid,500,0,0,0);
+        [Mpost{isubj} Tpost{isubj}] = PlotRipRaw(Restrict(LFP,tdatpost{isubj}{1}),dmid,500,0,0,0);
+    end
+    
+    
     %%
     %#####################################################################
     %#             F I G U R E S    B Y   S E S S I O N S
@@ -171,8 +181,16 @@ for isubj=1:length(Dir.path)
     supertit = ['Mouse ' num2str(subj(isubj))  ' - Hypnograms'];
     figH.SleepArch_single{isubj} = figure('Color',[1 1 1], 'rend','painters','pos', ...
         [10 10 1650 1200],'Name', supertit, 'NumberTitle','off');
-        %pre
-        subplot(3,2,1:2)
+        % set axes position
+        preS = axes('position', [.05 .68 .6 .23]);
+        preD = axes('position', [.725 .68 .25 .23]);
+        postS = axes('position', [.05 .35 .6 .23]);
+        postD = axes('position', [.725 .35 .25 .23]);
+        bmin = axes('position', [.15 .08 .285 .18]);
+        bperc = axes('position', [.565 .08 .285 .18]); 
+        
+        % plot hypnograms
+        axes(preS)
             plot(Range(pre_SleepStages,'s')/3600,Data(pre_SleepStages),'k')
             hold on
             for ep=1:length(pre_Epochs)
@@ -187,8 +205,7 @@ for isubj=1:length(Dir.path)
             set(gca,'Ytick',ytick_substage,'YTickLabel',ylabel_substage)
             title('Pre-sleep','FontSize',14,'FontWeight','bold'); 
         
-        %post
-        subplot(3,2,3:4)
+        axes(postS)
             plot(Range(post_SleepStages,'s')/3600,Data(post_SleepStages),'k') 
             hold on
             for ep=1:length(post_Epochs)
@@ -213,8 +230,36 @@ for isubj=1:length(Dir.path)
                 str = sprintf(['Stimulations: * \nNumber of stim: ' num2str(stims.nbStim)]);
                 annotation('textbox',dim,'String',str,'Color','black','FitBoxToText','on');
             end
+        
+        if ss(isubj)
+            maxy = max(max([Mpre{isubj}(:,2)+Mpre{isubj}(:,3) Mpost{isubj}(:,2)+Mpost{isubj}(:,3)]))*1.15;
+            miny = min(min([Mpre{isubj}(:,2)-Mpre{isubj}(:,3) Mpost{isubj}(:,2)-Mpost{isubj}(:,3)]))*1.15;
+            % plot deltas
+            axes(preD)
+                shadedErrorBar([],Mpre{isubj}(:,2),Mpre{isubj}(:,3),'-b',1);
+                xlabel('Time (ms)')
+                ylabel('{\mu}V')   
+                title(['Pre-sleep deltas']);      
+                xlim([1 size(Mpre{isubj},1)])
+                ylim([miny maxy])
+                set(gca, 'Xtick', 1:floor(length(Mpre{isubj}(:,2))/10): ...
+                    length(Mpre{isubj}(:,2)),'Xticklabel', num2cell([-500:100:500])) 
+                makepretty_erc
 
-        subplot(3,2,5)
+            axes(postD)
+                shadedErrorBar([],Mpost{isubj}(:,2),Mpost{isubj}(:,3),'-b',1);
+                xlabel('Time (ms)')
+                ylabel('{\mu}V')   
+                title(['Post-sleep deltas']);      
+                xlim([1 size(Mpost{isubj},1)])
+                ylim([miny maxy])
+                set(gca, 'Xtick', 1:floor(length(Mpre{isubj}(:,2))/10): ...
+                    length(Mpre{isubj}(:,2)),'Xticklabel', num2cell([-500:100:500])) 
+                makepretty_erc
+        end
+                        
+        % plot sleep arch (bars)
+        axes(bmin)
             b1 = bar(stagdur'/(1E4*60),1,'FaceColor','flat');
             b1(1,1).CData = [1 1 1];
             b1(1,2).CData = [0 0 0];
@@ -232,7 +277,6 @@ for isubj=1:length(Dir.path)
             set(gca,'XTickLabel',ssnames)
             xlabel('Stages')
             ylabel('min')
-            makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)
             % creating legend with hidden-fake data
             hold on
             axP = get(gca,'Position');
@@ -241,8 +285,9 @@ for isubj=1:length(Dir.path)
             c1(1,2).CData = [0 0 0];
             legend(c1,{'Pre-sleep','Post-sleep'},'location','WestOutside');
             set(gca, 'Position', axP)
+            makepretty_erc
             
-        subplot(3,2,6)
+        axes(bperc)
             b2 = bar(stagperc',1,'FaceColor','flat');
             b2(1,1).CData = [1 1 1];
             b2(1,2).CData = [0 0 0];
@@ -260,7 +305,7 @@ for isubj=1:length(Dir.path)
             set(gca,'XTickLabel',ssnames)
             xlabel('Stages')
             ylabel('%')
-            makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)
+            makepretty_erc
 end  
 %  
 % %%  prep data for all mice

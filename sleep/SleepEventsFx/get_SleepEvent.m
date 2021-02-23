@@ -18,8 +18,8 @@ function [evt, evtmean, evtdif] = get_SleepEvent(dirPath,evtType,sEpoch,subst)
 for isuj=1:length(dirPath)
     switch evtType 
         case 'ripples'
-            nameFile = 'Ripples';
-            load([dirPath{isuj}{1} nameFile '.mat'], evtType,[nameFile 'Epoch'],'T');
+            nameFile = 'SWR';
+            load([dirPath{isuj}{1} nameFile '.mat'],'ripples','RipplesEpoch','T');
             evtEpoch = RipplesEpoch;
             evtData = ripples;
         case 'Spindles'

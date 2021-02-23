@@ -30,13 +30,6 @@ else
 end
 Dir = RestrictPathForExperiment(Dir, 'nMice', mice_num);
 
-% % set text format
-% set(0,'defaulttextinterpreter','latex');
-% set(0,'DefaultTextFontname', 'Arial')
-% set(0,'DefaultAxesFontName', 'Arial')
-% set(0,'defaultTextFontSize',12)
-% set(0,'defaultAxesFontSize',12)
-
 % var init
 stageName = {'NREM','Wake','N1','N2','N3','Sleep'};
 
@@ -51,7 +44,7 @@ for isuj = 1:length(Dir.path)
     [sEpoch{isuj} subst(isuj)] = get_SleepEpoch(Dir.path{isuj}{1},Vtsd);
 end
 % get sleep event details
-[rip ripmean ripdif] = get_SleepEvent(Dir.path,'Ripples',sEpoch,subst);
+[rip ripmean ripdif] = get_SleepEvent(Dir.path,'ripples',sEpoch,subst);
            
 % count number of rip by subjet and stage
 if length(Dir.path)==1
@@ -75,7 +68,7 @@ i=1;
 for isuj=1:length(Dir.path)  
     if subst(isuj)
         for isess=1:2
-            wf(isess,4:6,i,1:size(ripmean.waveforms,4)) = ripmean.waveforms(isess,4:6,isuj,:);
+            wf(isess,3:5,i,1:size(ripmean.waveforms,4)) = ripmean.waveforms(isess,3:5,isuj,:);
         end
         i=i+1;
     end
@@ -125,6 +118,7 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
             'FitBoxToText','off','EdgeColor','none'); 
         a2.FontSize = 11;        
     end
+    
     for istage=1:length(stageName)-1
         if ~(sum(sum(isnan(ripmean.waveforms(:,istage,:,:)))) == ...
                 size(ripmean.waveforms(:,istage,:,:),4)*2*size(ripmean.waveforms(:,istage,:,:),3))
@@ -390,8 +384,8 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1100 800],'Name
         h.CData(5,:) = [.2 .2 .2];
         set(gca,'xticklabel',{[]})    
         ylabel({'% change','in rip/sec'});
-        ymin = min(min(ripdif.globalden(1:5,:)));
-        ymax = max(max(ripdif.globalden(1:5,:)));
+        ymin = min(min(ripdif.globalden(3:5,:)));
+        ymax = max(max(ripdif.globalden(3:5,:)));
         if sign(ymin)>0, ymin=0; else ymin=ymin*1.15; end
         if sign(ymax)>0, ymax=ymax*1.15; else ymax=0; end    
         ylim([ymin ymax])

@@ -26,7 +26,7 @@ try
     sEpoch{3,4} = Epoch{1};                   % n1
     sEpoch{3,5} = Epoch{2};                   % n2
     sEpoch{3,6} = Epoch{3};                   % n3
-    sEpoch{3,7} = or(Epoch{5},Epoch{7});      % sleep
+    sEpoch{3,7} = or(Epoch{4},Epoch{7});      % sleep
     subst = 1;
     clear Epoch
     try

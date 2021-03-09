@@ -143,7 +143,7 @@ Cols = {[0 0 0.9], [0.9 0 0], [0 0 0.9], [0.9 0 0],[0 0 0.9], [0.9 0 0],[0 0 0.9
 
 
 axes(CompareFR_Axes); %% Pyr/Int
-MakeSpreadAndBoxPlot_SB(FR_tocomp,Cols,[1:8]);
+MakeSpreadAndBoxPlot_SB(FR_tocomp,Cols,[1:8], {}, 1, 0);
 set(gca,'LineWidth',3,'FontWeight','bold','FontSize',10,'XTick',1.5:2:7.5,...
     'XTickLabel',{'WakeTheta','WakeNoTheta','SWS','REM'})
 ylabel('Mean firing rate (Hz)', 'FontWeight','bold','FontSize',14);

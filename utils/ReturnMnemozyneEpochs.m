@@ -20,6 +20,12 @@ function [HabEpoch, UMazeEpoch, CondEpoch, TaskEpoch, AfterConditioningEpoch] = 
 %   TaskEpoch               Habituation + pretests + conditioning
 %   AfterConditioningEpoch  All posttests
 % 
+% EXAMPLE
+% 
+%   [HabEpoch, UMazeEpoch, CondEpoch, TaskEpoch, AfterConditioningEpoch] = ReturnMnemozyneEpochs(SessionEpoch)
+%   [~, UMazeEpoch, CondEpoch, TaskEpoch, AfterConditioningEpoch] = ReturnMnemozyneEpochs(SessionEpoch, 'Speed', Vtsd, 'SpeedThresh', 4);
+% 
+% 
 % By Dima Bryzgalov, MOBS team, Paris,
 % 06/07/2020
 % github.com/bryzgalovdm
@@ -52,20 +58,24 @@ end
 
 %% Check for speed requirement
 if ~isempty(speed_data)
-    smoothspeed  = tsd(Range(speed_data),movmedian(Data(CleanVtsd),5));
+    smoothspeed  = tsd(Range(speed_data),movmedian(Data(speed_data),5));
     LocomotionEpoch = thresholdIntervals(smoothspeed,speed_thresh,'Direction','Above');
 end
 
 %% Create epochs
 
 % HabEpoch
-HabEpoch = SessionEpoch.Hab;
+if isfield(SessionEpoch, 'Hab1')
+    HabEpoch = or(SessionEpoch.Hab1, SessionEpoch.Hab2);
+else
+    HabEpoch = SessionEpoch.Hab;
+end
 if ~isempty(speed_data)
     HabEpoch = and(LocomotionEpoch, HabEpoch);
 end
 
 % BaselineExplo Epoch
-UMazeEpoch = or(SessionEpoch.Hab,SessionEpoch.TestPre1);
+UMazeEpoch = or(HabEpoch,SessionEpoch.TestPre1);
 for itest = 2:ntests
     UMazeEpoch = or(UMazeEpoch,SessionEpoch.(['TestPre' num2str(itest)]));
     UMazeEpoch = or(UMazeEpoch,SessionEpoch.(['TestPre' num2str(itest)]));

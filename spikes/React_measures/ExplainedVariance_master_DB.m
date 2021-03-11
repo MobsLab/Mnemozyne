@@ -110,10 +110,10 @@ REVREM = zeros(1,length(Dir.path));
 for j=1:length(Dir.path)
     
     cd(Dir.path{j}{1});
-    load('SpikeData.mat','S','PlaceCells');
+    spikes{j} = load('SpikeData.mat','S','PlaceCells', 'RippleGroups', 'TT');
     % If there are less than 2 PCs - don't do
-    if isfield(PlaceCells,'idx')
-        if length(PlaceCells.idx)>2
+    if isfield(spikes{j}.PlaceCells,'idx')
+        if length(spikes{j}.PlaceCells.idx)>2
            
             load('behavResources.mat','SessionEpoch', 'CleanVtsd', 'FreezeAccEpoch');
             load('Ripples.mat','ripples');
@@ -156,12 +156,15 @@ for j=1:length(Dir.path)
             
             %% Create firing rate histograms
             
+            id_ripples{j} = PyramLayerSorting(spikes{j}.S, spikes{j}.RippleGroups, spikes{j}.TT);
+            pyr_cells = spikes{j}.S(id_ripples{j});
+
 %             % Restrict spike train to place cells only
 %             S_PC = S(PlaceCells.idx);
             
             % Bin the trains
 %             Q=MakeQfromS(S,binsize);
-            Q=MakeQfromS(S,binsize);
+            Q=MakeQfromS(pyr_cells, binsize);
             
             % Create epochs for different periods of the day
                         

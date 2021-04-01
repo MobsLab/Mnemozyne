@@ -1,4 +1,4 @@
-function [EV,REV] = ExplainedVariance(Q_Pre, Q_Task, Q_Post)
+function [EV,REV,CorrM] = ExplainedVariance(Q_Pre, Q_Task, Q_Post)
 
 % This script calculates explained variance (EV) and reverse EV
 % the same manner it was calculated in Kudrimoti et al., 1999
@@ -37,6 +37,7 @@ function [EV,REV] = ExplainedVariance(Q_Pre, Q_Task, Q_Post)
 %     - EV  -      explained variance
 %     - REV -      reverse expained variance
 %                  (pre- and post-epochs are swopped)
+%     - CorrM      Matrices of correlations for Pre-, Task and Post
 %                  
 %  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %  

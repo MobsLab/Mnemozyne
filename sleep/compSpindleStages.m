@@ -1,4 +1,4 @@
-function [figH] = compSpindleStages(expe, mice_num)
+function [figH spindles_data] = compSpindleStages(expe,mice_num,expenum)
 
 %==========================================================================
 % Details: compare sleep events (spiples, spindles, deltas if any) between
@@ -20,15 +20,21 @@ function [figH] = compSpindleStages(expe, mice_num)
 %==========================================================================
 
 %% Parameters
-if strcmp(expe,'StimMFBWake') || strcmp(expe,'Novel')
-    Dir = PathForExperimentsERC_SL(expe);
-elseif strcmp(expe,'UMazePAG') 
-    Dir = PathForExperimentsERC_Dima(expe);
-else    
+try
+    Dir = PathForExperimentsERC(expe);
+catch
     warning('Exited. Verify experiment name');
     return
 end
-Dir = RestrictPathForExperiment(Dir, 'nMice', mice_num);
+% if strcmp(expe,'StimMFBWake') || strcmp(expe,'Novel')
+%     Dir = PathForExperimentsERC_SL(expe);
+% elseif strcmp(expe,'UMazePAG') 
+%     Dir = PathForExperimentsERC_Dima(expe);
+% else    
+%     warning('Exited. Verify experiment name');
+%     return
+% end
+Dir = RestrictPathForExperiment(Dir, 'nMice', unique(mice_num));
 
 % var init
 stageName = {'NREM','REM','Wake','N1','N2','N3','Sleep'};
@@ -39,21 +45,29 @@ sstag = [1 5 6];
 %#####################################################################
 
 % get sleep epoch by stage
+ii=0;
 for isuj = 1:length(Dir.path)
-    load([Dir.path{isuj}{1} 'behavResources.mat'], 'SessionEpoch','Vtsd');
-    [sEpoch{isuj} subst(isuj)] = get_SleepEpoch(Dir.path{isuj}{1},Vtsd);
+    for iexp=1:length(Dir.path{isuj})
+        ii=ii+1;
+        load([Dir.path{isuj}{iexp} 'behavResources.mat'], 'SessionEpoch','Vtsd');
+        [sEpoch{ii} subst(ii)] = get_SleepEpoch(Dir.path{isuj}{iexp},Vtsd);
+    end
 end
 % get sleep event details
-[spi spimean spidif] = get_SleepEvent(Dir.path,'Spindles',sEpoch,subst);
+[spi spimean spidif] = get_SleepEvent(Dir.path,'Spindles',sEpoch,subst,expenum);
            
 % count number of spindle by subjet and stage
-if length(Dir.path)==1
+if length(expenum)==1
     for istage=1:length(stageName)-1
         for isess=1:2
             spinbr(isess,istage) = length(spi.dur{isuj,isess,istage});
         end
     end
 end
+
+spindles_data.spi = spi;
+spindles_data.spimean = spimean;
+spindles_data.spidif = spidif;
 
 %%
 %#####################################################################
@@ -65,7 +79,7 @@ end
 % prep data for figures
 % get rid of empty data (without substaging)
 i=1;
-for isuj=1:length(Dir.path)  
+for isuj=1:length(expenum)  
     if subst(isuj)
         for isess=1:2
             wf(isess,4:6,i,1:size(spimean.waveforms,4)) = spimean.waveforms(isess,4:6,isuj,:);
@@ -77,7 +91,8 @@ end
 ptitles = {'Avg Waveforms','Local Density','Global Density','Duration','Frequency','Peak Amplitude',};
 % prep number of mouse per analyses
 for istage=1:length(sstag)
-    numst(sstag(istage)) = sum(~isnan(squeeze(spimean.waveforms(1,sstag(istage),:,1))));
+%     numst(sstag(istage)) = sum(~isnan(squeeze(spimean.waveforms(1,sstag(istage),:,1))));
+    numst(sstag(istage)) = sum(find(squeeze(spimean.amp(1,sstag(istage),:,1)))>0);
 end
 % prep var - amplitude waveforms
 maxy = max(max(max(max(squeeze(squeeze(squeeze(spimean.waveforms(:,:,:,:))))))))*1.2;
@@ -119,7 +134,7 @@ figH.global = figure('Color',[1 1 1], 'rend','painters', ...
               axes(ax_wv{istage})
                 % plot pre-sleep event
                 if ~isempty(find(spimean.waveforms(1,sstag(istage),:,:,:)>0)) % special case: no event for the session
-                    if length(Dir.path)==1 % special case: if only one mouse
+                    if length(expenum)==1 % special case: if only one mouse
                         avgevent = repmat(squeeze(squeeze(spimean.waveforms(1,sstag(istage),:,:))),1,2); % fix if only 1 mouse
                         hpre = shadedErrorBarSL([],avgevent',{@mean, @std},'lineProps','-k','transparent',1);
                     else
@@ -141,7 +156,7 @@ figH.global = figure('Color',[1 1 1], 'rend','painters', ...
                 hold on
                 % plot post-sleep event
                 if ~isempty(spimean.waveforms(2,sstag(istage),:,:,:)) % special case: no event for the session
-                    if length(Dir.path)==1 % special case: if only one mouse
+                    if length(expenum)==1 % special case: if only one mouse
                         avgevent = repmat(squeeze(squeeze(spimean.waveforms(2,sstag(istage),:,:))),1,2); % fix if only 1 mouse
                         hpost = shadedErrorBarSL([],avgevent',{@mean, @std},'lineProps','-b','transparent',1);
                     else  
@@ -174,7 +189,7 @@ figH.global = figure('Color',[1 1 1], 'rend','painters', ...
                 end
         end
     end
-    for i=1:length(Dir.path)
+    for i=1:length(expenum)
         nanfix(i,1) = nan;
     end
     
@@ -184,7 +199,8 @@ figH.global = figure('Color',[1 1 1], 'rend','painters', ...
     axes(ax_amp)
 %      subplot(6,4,6:8)
        [p,h,her] = PlotErrorBarN_SL(ampdat,...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [0 0 0]; h.CData(2,:) = [0 .2 1];
         h.CData(4,:) = [0 0 0]; h.CData(5,:) = [0 .2 1];
@@ -211,7 +227,8 @@ figH.global = figure('Color',[1 1 1], 'rend','painters', ...
     axes(ax_freq)
 %     subplot(6,4,10:12)
        [p,h,her] = PlotErrorBarN_SL(freqdat,...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [0 0 0]; h.CData(2,:) = [0 .2 1];
         h.CData(4,:) = [0 0 0]; h.CData(5,:) = [0 .2 1];
@@ -229,7 +246,8 @@ figH.global = figure('Color',[1 1 1], 'rend','painters', ...
     axes(ax_dur)
 %     subplot(6,4,14:16)
        [p,h,her] = PlotErrorBarN_SL(durdat,...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [0 0 0]; h.CData(2,:) = [0 .2 1];
         h.CData(4,:) = [0 0 0]; h.CData(5,:) = [0 .2 1];
@@ -247,7 +265,8 @@ figH.global = figure('Color',[1 1 1], 'rend','painters', ...
     axes(ax_gden)
 %      subplot(6,4,18:20)
        [p,h,her] = PlotErrorBarN_SL(globaldendat,...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [0 0 0]; h.CData(2,:) = [0 .2 1];
         h.CData(4,:) = [0 0 0]; h.CData(5,:) = [0 .2 1];
@@ -255,7 +274,7 @@ figH.global = figure('Color',[1 1 1], 'rend','painters', ...
         set(gca,'xticklabel',{[]})
         set(h, 'LineWidth', 1);
         set(her, 'LineWidth', 1);
-        ylabel('event/sec');
+        ylabel('event/min');
         makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)
         
     localdendat = [squeeze(spimean.localden(1,1,:)) squeeze(spimean.localden(2,1,:)) nanfix ...
@@ -265,7 +284,8 @@ figH.global = figure('Color',[1 1 1], 'rend','painters', ...
     axes(ax_lden)   
 %      subplot(6,4,22:24)
        [p,h,her] = PlotErrorBarN_SL(localdendat,...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [0 0 0]; h.CData(2,:) = [0 .2 1];
         h.CData(4,:) = [0 0 0]; h.CData(5,:) = [0 .2 1];
@@ -279,7 +299,7 @@ figH.global = figure('Color',[1 1 1], 'rend','painters', ...
     % titles    
     ax_tamp  = axes('position', [.08 .65 .05 .108]);
        text(-.18, 0.3,'Amplitude','rotation',90, ...
-           'FontSize',14,'FontWeight','bold');15
+           'FontSize',14,'FontWeight','bold');
        set(ax_tamp,'Visible','off')
     ax_tfreq = axes('position', [.08 .51 .05 .108]);
        text(-.18, 0.3,'Frequency','rotation',90, ...
@@ -301,7 +321,7 @@ figH.global = figure('Color',[1 1 1], 'rend','painters', ...
     % Set Number of mouse per stage at bottom of figure
     xpos = 0.21;
     for ist=1:length(sstag)
-        if length(Dir.path)==1
+        if length(expenum)==1
             str = {stageName{sstag(ist)},'', ...
                 ['N=' num2str(numst(sstag(ist)))], ...
                 ['pre#: ' num2str(spinbr(1,sstag(ist)))], ...
@@ -320,31 +340,31 @@ figH.global = figure('Color',[1 1 1], 'rend','painters', ...
 ptitles = {'Peak Amplitude','Frequency','Duration','Global Density','Local Density'};
 
 supertit = 'Spindles during pre/post sleep - differences';
-figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 600 800],'Name', supertit, 'NumberTitle','off');
+figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 800 800],'Name', supertit, 'NumberTitle','off');
     % axes position
     
     % Set plot titles
-    ypos = 1.05; 
-    for iplot=1:5
-        a1 = annotation('textbox',[.05 ypos-.17*iplot 0 0],...
-            'String',ptitles{iplot},'FitBoxToText','on','EdgeColor','none'); 
-        a1.FontSize = 12;
-    end
+%     ypos = 1.05; 
+%     for iplot=1:5
+%         a1 = annotation('textbox',[.05 ypos-.17*iplot 0 0],...
+%             'String',ptitles{iplot},'FitBoxToText','on','EdgeColor','none'); 
+%         a1.FontSize = 12;
+%     end
     
     % titles    
-    ax_tamp  = axes('position', [.08 .65 .05 .108]);
+    ax_tamp  = axes('position', [.08 .76 .05 .108]);
        text(-.18, 0.3,'Amplitude','rotation',90, ...
-           'FontSize',14,'FontWeight','bold');15
+           'FontSize',14,'FontWeight','bold');
        set(ax_tamp,'Visible','off')
-    ax_tfreq = axes('position', [.08 .51 .05 .108]);
+    ax_tfreq = axes('position', [.08 .59 .05 .108]);
        text(-.18, 0.3,'Frequency','rotation',90, ...
            'FontSize',14,'FontWeight','bold');
        set(ax_tfreq,'Visible','off')
-    ax_tdur  = axes('position', [.08 .37 .05 .108]); 
+    ax_tdur  = axes('position', [.08 .42 .05 .108]); 
        text(-.18, 0.3,'Duration','rotation',90, ...
            'FontSize',14,'FontWeight','bold');
        set(ax_tdur,'Visible','off')
-    ax_tgden = axes('position', [.08 .24 .05 .108]);
+    ax_tgden = axes('position', [.08 .26 .05 .108]);
        text(-.18, 0.3,{'Global','density'},'rotation',90, ...
            'FontSize',14,'FontWeight','bold');
        set(ax_tgden,'Visible','off')
@@ -354,19 +374,22 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 600 800],'Name'
        set(ax_tlden,'Visible','off') 
        
     % amplitude
-    subplot(5,4,2:4)
+    subplot(5,5,2:4)
        [p,h,her] = PlotErrorBarN_SL(spidif.amp(sstag,:)',...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [0 0 0]; 
         h.CData(2,:) = [.5 .5 .5]; 
         h.CData(3,:) = [.2 .2 .2];
         set(gca,'xticklabel',{[]})    
         ylabel({'% change','in uV'});
-        ymin = min(min(spidif.amp(sstag,:)));
-        ymax = max(max(spidif.amp(sstag,:)));
-        if sign(ymin)>0, ymin=0; else ymin=ymin*1.15; end
-        if sign(ymax)>0, ymax=ymax*1.15; else ymax=0; end    
+%         ymin = min(min(spidif.amp(sstag,:)));
+%         ymax = max(max(spidif.amp(sstag,:)));
+%         if sign(ymin)>0, ymin=0; else ymin=ymin*1.15; end
+%         if sign(ymax)>0, ymax=ymax*1.15; else ymax=0; end  
+        ymin = min(nanmean(spidif.amp(sstag,:),2))-nanstd(nanmean(spidif.amp(sstag,:),2)); 
+        ymax = max(nanmean(spidif.amp(sstag,:),2))+nanstd(nanmean(spidif.amp(sstag,:),2));  
         ylim([ymin ymax])
         makepretty_erc('fsizel',10,'lwidth',1.5,'fsizet',16)
         
@@ -382,60 +405,70 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 600 800],'Name'
         set(gca, 'Position', axP)
     
     % Freq
-    subplot(5,4,6:8)
+    subplot(5,5,7:9)
        [p,h,her] = PlotErrorBarN_SL(spidif.freq(sstag,:)',...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [0 0 0]; 
         h.CData(2,:) = [.5 .5 .5]; 
         h.CData(3,:) = [.2 .2 .2];
         set(gca,'xticklabel',{[]})    
         ylabel({'% change','in Hz'});
-        ymin = min(min(spidif.freq(sstag,:)));
-        ymax = max(max(spidif.freq(sstag,:)));
-        if sign(ymin)>0, ymin=ymin*.85; else ymin=ymin*1.15; end
-        if sign(ymax)>0, ymax=ymax*1.15; else ymax=ymax*.85; end    
+%         ymin = min(min(spidif.freq(sstag,:)));
+%         ymax = max(max(spidif.freq(sstag,:)));
+%         if sign(ymin)>0, ymin=ymin*.85; else ymin=ymin*1.15; end
+%         if sign(ymax)>0, ymax=ymax*1.15; else ymax=ymax*.85; end  
+        ymin = min(nanmean(spidif.freq(sstag,:),2))-nanstd(nanmean(spidif.freq(sstag,:),2)); 
+        ymax = max(nanmean(spidif.freq(sstag,:),2))+nanstd(nanmean(spidif.freq(sstag,:),2));    
         ylim([ymin ymax])
         makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)
         
     % Dur
-    subplot(5,4,10:12)
+    subplot(5,5,12:14)
        [p,h,her] = PlotErrorBarN_SL(spidif.dur(sstag,:)',...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [0 0 0]; 
         h.CData(2,:) = [.5 .5 .5]; 
         h.CData(3,:) = [.2 .2 .2];
         set(gca,'xticklabel',{[]})    
         ylabel({'% change','in sec'});
-        ymin = min(min(spidif.dur(sstag,:)));
-        ymax = max(max(spidif.dur(sstag,:)));
-        if sign(ymin)>0, ymin=ymin*.85; else ymin=ymin*1.15; end
-        if sign(ymax)>0, ymax=ymax*1.15; else ymax=ymax*.85; end    
+%         ymin = min(min(spidif.dur(sstag,:)));
+%         ymax = max(max(spidif.dur(sstag,:)));
+%         if sign(ymin)>0, ymin=ymin*.85; else ymin=ymin*1.15; end
+%         if sign(ymax)>0, ymax=ymax*1.15; else ymax=ymax*.85; end  
+        ymin = min(nanmean(spidif.dur(sstag,:),2))-nanstd(nanmean(spidif.dur(sstag,:),2)); 
+        ymax = max(nanmean(spidif.dur(sstag,:),2))+nanstd(nanmean(spidif.dur(sstag,:),2));     
         ylim([ymin ymax])
         makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)
         
     % Global Density
-    subplot(5,4,14:16)
+    subplot(5,5,17:19)
        [p,h,her] = PlotErrorBarN_SL(spidif.globalden(sstag,:)',...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [0 0 0]; 
         h.CData(2,:) = [.5 .5 .5]; 
         h.CData(3,:) = [.2 .2 .2];
         set(gca,'xticklabel',{[]})    
-        ylabel({'% change','in spi/sec'});
-        ymin = min(min(spidif.globalden(sstag,:)));
-        ymax = max(max(spidif.globalden(sstag,:)));
-        if sign(ymin)>0, ymin=ymin*.85; else ymin=ymin*1.15; end
-        if sign(ymax)>0, ymax=ymax*1.15; else ymax=ymax*.85; end    
+        ylabel({'% change','in spi/min'});
+%         ymin = min(min(spidif.globalden(sstag,:)));
+%         ymax = max(max(spidif.globalden(sstag,:)));
+%         if sign(ymin)>0, ymin=ymin*.85; else ymin=ymin*1.15; end
+%         if sign(ymax)>0, ymax=ymax*1.15; else ymax=ymax*.85; end   
+        ymin = min(nanmean(spidif.globalden(sstag,:),2))-nanstd(nanmean(spidif.globalden(sstag,:),2)); 
+        ymax = max(nanmean(spidif.globalden(sstag,:),2))+nanstd(nanmean(spidif.globalden(sstag,:),2));  
         ylim([ymin ymax])
         makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)
         
     % Local Density
-    subplot(5,4,18:20)
+    subplot(5,5,22:24)
        [p,h,her] = PlotErrorBarN_SL(spidif.localden(sstag,:)',...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [0 0 0]; 
         h.CData(2,:) = [.5 .5 .5]; 
@@ -443,10 +476,12 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 600 800],'Name'
         set(gca,'xticklabel',{[]})    
         ylabel({'% change','in spi/min'});
         set(gca,'xtick',[1:3],'xticklabel',stageName(sstag)) 
-        ymin = min(min(spidif.localden(sstag,:)));
-        ymax = max(max(spidif.localden(sstag,:)));
-        if sign(ymin)>0, ymin=ymin*.85; else ymin=ymin*1.15; end
-        if sign(ymax)>0, ymax=ymax*1.15; else ymax=ymax*.85; end    
+%         ymin = min(min(spidif.localden(sstag,:)));
+%         ymax = max(max(spidif.localden(sstag,:)));
+%         if sign(ymin)>0, ymin=ymin*.85; else ymin=ymin*1.15; end
+%         if sign(ymax)>0, ymax=ymax*1.15; else ymax=ymax*.85; end  
+        ymin = min(nanmean(spidif.localden(sstag,:),2))-nanstd(nanmean(spidif.localden(sstag,:),2)); 
+        ymax = max(nanmean(spidif.localden(sstag,:),2))+nanstd(nanmean(spidif.localden(sstag,:),2));  
         ylim([ymin ymax])
         makepretty_erc('fsizel',10,'lwidth',1.5,'fsizet',16)
 end

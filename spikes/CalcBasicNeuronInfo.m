@@ -38,7 +38,7 @@ function [MatInfoNeurons, BasicNeuronInfo] = CalcBasicNeuronInfo(Dir, ploto)
 
 % Folders with data
 if ~exist('Dir', 'var')
-    Dir = '/media/nas5/ProjetERC2/Mouse-994/20191013/PagExp/_Concatenated/';
+    Dir = '/media/hobbes/DataMOBS143/M1182/StimMFBWake2/';
 end
 % Dir = PathForExperimentsERC_Dima('AllSpikes');
 

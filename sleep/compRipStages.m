@@ -1,4 +1,4 @@
-function [figH] = compRipStages(expe, mice_num)
+function [figH ripples_data] = compRipStages(expe,mice_num,expenum)
 
 %==========================================================================
 % Details: compare sleep events (ripples, spindles, deltas if any) between
@@ -20,15 +20,21 @@ function [figH] = compRipStages(expe, mice_num)
 %==========================================================================
 
 %% Parameters
-if strcmp(expe,'StimMFBWake') || strcmp(expe,'Novel')
-    Dir = PathForExperimentsERC_SL(expe);
-elseif strcmp(expe,'UMazePAG') 
-    Dir = PathForExperimentsERC_Dima(expe);
-else    
+try
+    Dir = PathForExperimentsERC(expe);
+catch
     warning('Exited. Verify experiment name');
     return
 end
-Dir = RestrictPathForExperiment(Dir, 'nMice', mice_num);
+% if strcmp(expe,'StimMFBWake') || strcmp(expe,'Novel')
+%     Dir = PathForExperimentsERC_SL(expe);
+% elseif strcmp(expe,'UMazePAG') 
+%     Dir = PathForExperimentsERC_Dima(expe);
+% else    
+%     warning('Exited. Verify experiment name');
+%     return
+% end
+Dir = RestrictPathForExperiment(Dir, 'nMice', unique(mice_num));
 
 % var init
 stageName = {'NREM','Wake','N1','N2','N3','Sleep'};
@@ -39,21 +45,29 @@ stageName = {'NREM','Wake','N1','N2','N3','Sleep'};
 %#####################################################################
 
 % get sleep epoch by stage
+ii=0;
 for isuj = 1:length(Dir.path)
-    load([Dir.path{isuj}{1} 'behavResources.mat'], 'SessionEpoch','Vtsd');
-    [sEpoch{isuj} subst(isuj)] = get_SleepEpoch(Dir.path{isuj}{1},Vtsd);
+    for iexp=1:length(Dir.path{isuj})
+        ii=ii+1;
+        load([Dir.path{isuj}{iexp} 'behavResources.mat'], 'SessionEpoch','Vtsd');
+        [sEpoch{ii} subst(ii)] = get_SleepEpoch(Dir.path{isuj}{iexp},Vtsd);
+    end
 end
 % get sleep event details
-[rip ripmean ripdif] = get_SleepEvent(Dir.path,'ripples',sEpoch,subst);
+[rip ripmean ripdif] = get_SleepEvent(Dir.path,'ripples',sEpoch,subst,expenum);
            
 % count number of rip by subjet and stage
-if length(Dir.path)==1
+if length(expenum)==1
     for istage=1:length(stageName)-1
         for isess=1:2
             ripnbr(isess,istage) = length(rip.dur{isuj,isess,istage});
         end
     end
 end
+
+ripples_data.rip = rip;
+ripples_data.ripmean = ripmean;
+ripples_data.ripdif = ripdif;
 
 %%
 %#####################################################################
@@ -65,7 +79,7 @@ end
 % prep data for figures
 % get rid of empty data (without substaging)
 i=1;
-for isuj=1:length(Dir.path)  
+for isuj=1:length(expenum)  
     if subst(isuj)
         for isess=1:2
             wf(isess,3:5,i,1:size(ripmean.waveforms,4)) = ripmean.waveforms(isess,3:5,isuj,:);
@@ -106,7 +120,7 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
     % Set Number of mouse per stage at bottom of figure
     xpos = 0.184;
     for ist=1:length(stageName)-1
-        if length(Dir.path)==1
+        if length(expenum)==1
             str = {stageName{ist},'', ...
                 ['N=' num2str(numst(ist))], ...
                 ['pre#: ' num2str(ripnbr(1,ist))], ...
@@ -125,7 +139,7 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
             subplot(6,6,istage+1)
                 % plot pre-sleep event
                 if ~isempty(find(ripmean.waveforms(1,istage,:,:,:)>0)) % special case: no event for the session
-                    if length(Dir.path)==1 % special case: if only one mouse
+                    if length(expenum)==1 % special case: if only one mouse
                         avgevent = repmat(squeeze(squeeze(ripmean.waveforms(1,istage,:,:))),1,2); % fix if only 1 mouse
                         hpre = shadedErrorBarSL([],avgevent',{@mean, @std},'lineProps','-k','transparent',1);
                     else
@@ -147,7 +161,7 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
                 hold on
                 % plot post-sleep event
                 if ~isempty(ripmean.waveforms(2,istage,:,:,:)) % special case: no event for the session
-                    if length(Dir.path)==1 % special case: if only one mouse
+                    if length(expenum)==1 % special case: if only one mouse
                         avgevent = repmat(squeeze(squeeze(ripmean.waveforms(2,istage,:,:))),1,2); % fix if only 1 mouse
                         hpost = shadedErrorBarSL([],avgevent',{@mean, @std},'lineProps','-b','transparent',1);
                     else  
@@ -176,7 +190,7 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
                 end
         end
     end
-    for i=1:length(Dir.path)
+    for i=1:length(expenum)
         nanfix(i,1) = nan;
     end
     
@@ -186,7 +200,8 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
     
      subplot(6,6,8:12)
        [p,h,her] = PlotErrorBarN_SL(ampdat,...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [1 1 1]; h.CData(2,:) = [0 0 0];
         h.CData(4,:) = [1 1 1]; h.CData(5,:) = [0 0 0];
@@ -214,7 +229,8 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
      
     subplot(6,6,14:18)
        [p,h,her] = PlotErrorBarN_SL(freqdat,...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [1 1 1]; h.CData(2,:) = [0 0 0];
         h.CData(4,:) = [1 1 1]; h.CData(5,:) = [0 0 0];
@@ -233,7 +249,8 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
     
     subplot(6,6,20:24)
        [p,h,her] = PlotErrorBarN_SL(durdat,...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [1 1 1]; h.CData(2,:) = [0 0 0];
         h.CData(4,:) = [1 1 1]; h.CData(5,:) = [0 0 0];
@@ -252,7 +269,8 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
     
      subplot(6,6,26:30)
        [p,h,her] = PlotErrorBarN_SL(globaldendat,...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [1 1 1]; h.CData(2,:) = [0 0 0];
         h.CData(4,:) = [1 1 1]; h.CData(5,:) = [0 0 0];
@@ -271,7 +289,8 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
     
      subplot(6,6,32:36)
        [p,h,her] = PlotErrorBarN_SL(localdendat,...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [1 1 1]; h.CData(2,:) = [0 0 0];
         h.CData(4,:) = [1 1 1]; h.CData(5,:) = [0 0 0];
@@ -291,7 +310,7 @@ figH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N
 ptitles = {'Peak Amplitude','Frequency','Duration','Global Density','Local Density'};
 
 supertit = 'Ripples during pre/post sleep - differences';
-figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1100 800],'Name', supertit, 'NumberTitle','off');
+figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1000 1800],'Name', supertit, 'NumberTitle','off');
     % Set plot titles
     ypos = 1.05; 
     for iplot=1:5
@@ -303,7 +322,8 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1100 800],'Name
     % amplitude
     subplot(5,6,2:6)
        [p,h,her] = PlotErrorBarN_SL(ripdif.amp(1:5,:)',...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [0 0 0]; 
         h.CData(2,:) = [1 1 1];
@@ -312,10 +332,8 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1100 800],'Name
         h.CData(5,:) = [.2 .2 .2];
         set(gca,'xticklabel',{[]})    
         ylabel({'% change','in uV'});
-        ymin = min(min(ripdif.amp(1:5,:)));
-        ymax = max(max(ripdif.amp(1:5,:)));
-        if sign(ymin)>0, ymin=0; else ymin=ymin*1.15; end
-        if sign(ymax)>0, ymax=ymax*1.15; else ymax=0; end    
+        ymin = min(nanmean(ripdif.amp(1:5,:),2))-nanstd(nanmean(ripdif.amp(1:5,:),2)); 
+        ymax = max(nanmean(ripdif.amp(1:5,:),2))+nanstd(nanmean(ripdif.amp(1:5,:),2));  
         ylim([ymin ymax])
         makepretty_erc('fsizel',10,'lwidth',1.5,'fsizet',16)
         
@@ -337,7 +355,8 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1100 800],'Name
     % Freq
     subplot(5,6,8:12)
        [p,h,her] = PlotErrorBarN_SL(ripdif.freq(1:5,:)',...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [0 0 0]; 
         h.CData(2,:) = [1 1 1];
@@ -346,17 +365,16 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1100 800],'Name
         h.CData(5,:) = [.2 .2 .2];
         set(gca,'xticklabel',{[]})    
         ylabel({'% change','in Hz'});
-        ymin = min(min(ripdif.freq(1:5,:)));
-        ymax = max(max(ripdif.freq(1:5,:)));
-        if sign(ymin)>0, ymin=0; else ymin=ymin*1.15; end
-        if sign(ymax)>0, ymax=ymax*1.15; else ymax=0; end    
+        ymin = min(nanmean(ripdif.freq(1:5,:),2))-nanstd(nanmean(ripdif.freq(1:5,:),2)); 
+        ymax = max(nanmean(ripdif.freq(1:5,:),2))+nanstd(nanmean(ripdif.freq(1:5,:),2));    
         ylim([ymin ymax])
         makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)
         
     % Dur
     subplot(5,6,14:18)
        [p,h,her] = PlotErrorBarN_SL(ripdif.dur(1:5,:)',...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [0 0 0]; 
         h.CData(2,:) = [1 1 1];
@@ -365,17 +383,16 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1100 800],'Name
         h.CData(5,:) = [.2 .2 .2];
         set(gca,'xticklabel',{[]})    
         ylabel({'% change','in ms'});
-        ymin = min(min(ripdif.dur(1:5,:)));
-        ymax = max(max(ripdif.dur(1:5,:)));
-        if sign(ymin)>0, ymin=0; else ymin=ymin*1.15; end
-        if sign(ymax)>0, ymax=ymax*1.15; else ymax=0; end    
+        ymin = min(nanmean(ripdif.dur(1:5,:),2))-nanstd(nanmean(ripdif.dur(1:5,:),2)); 
+        ymax = max(nanmean(ripdif.dur(1:5,:),2))+nanstd(nanmean(ripdif.dur(1:5,:),2));  
         ylim([ymin ymax])
         makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)
         
     % Global Density
     subplot(5,6,20:24)
        [p,h,her] = PlotErrorBarN_SL(ripdif.globalden(1:5,:)',...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [0 0 0]; 
         h.CData(2,:) = [1 1 1];
@@ -384,17 +401,16 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1100 800],'Name
         h.CData(5,:) = [.2 .2 .2];
         set(gca,'xticklabel',{[]})    
         ylabel({'% change','in rip/sec'});
-        ymin = min(min(ripdif.globalden(3:5,:)));
-        ymax = max(max(ripdif.globalden(3:5,:)));
-        if sign(ymin)>0, ymin=0; else ymin=ymin*1.15; end
-        if sign(ymax)>0, ymax=ymax*1.15; else ymax=0; end    
+        ymin = min(nanmean(ripdif.globalden(1:5,:),2))-nanstd(nanmean(ripdif.globalden(1:5,:),2)); 
+        ymax = max(nanmean(ripdif.globalden(1:5,:),2))+nanstd(nanmean(ripdif.globalden(1:5,:),2));   
         ylim([ymin ymax])
         makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)
         
     % Local Density
     subplot(5,6,26:30)
        [p,h,her] = PlotErrorBarN_SL(ripdif.localden(1:5,:)',...
-                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3]);
+                'barwidth', 0.6, 'newfig', 0,'barcolors',[.3 .3 .3],...
+                'showsigstar','none','showpoints',0);
         h.FaceColor = 'flat';
         h.CData(1,:) = [0 0 0]; 
         h.CData(2,:) = [1 1 1];
@@ -404,10 +420,8 @@ figH.diff = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1100 800],'Name
         set(gca,'xticklabel',{[]})    
         ylabel({'% change','in rip/min'});
         set(gca,'xtick',[1:5],'xticklabel',stageName) 
-        ymin = min(min(ripdif.localden(1:5,:)));
-        ymax = max(max(ripdif.localden(1:5,:)));
-        if sign(ymin)>0, ymin=0; else ymin=ymin*1.15; end
-        if sign(ymax)>0, ymax=ymax*1.15; else ymax=0; end    
+        ymin = min(nanmean(ripdif.localden(1:5,:),2))-nanstd(nanmean(ripdif.localden(1:5,:),2)); 
+        ymax = max(nanmean(ripdif.localden(1:5,:),2))+nanstd(nanmean(ripdif.localden(1:5,:),2));  
         ylim([ymin ymax])
         makepretty_erc('fsizel',10,'lwidth',1.5,'fsizet',16)
 end

@@ -1,0 +1,541 @@
+[1mdiff --git a/sleep/SleepEventsFx/get_SleepEvent.m~ b/sleep/SleepEventsFx/get_SleepEvent.m~[m
+[1mdeleted file mode 100644[m
+[1mindex 7b6f0e0..0000000[m
+[1m--- a/sleep/SleepEventsFx/get_SleepEvent.m~[m
+[1m+++ /dev/null[m
+[36m@@ -1,71 +0,0 @@[m
+[31m-function [evt evtmean] = get_SleepEvent(dirPath,evtType,sEpoch,subst)[m
+[31m-[m
+[31m-%==========================================================================[m
+[31m-% Details: get sleep stages epochs for SleepEvents analyses[m
+[31m-%[m
+[31m-% INPUTS:[m
+[31m-%       - Vtsd              Vtsd from behavResources (speed in tsd format)[m
+[31m-%[m
+[31m-% OUTPUT:[m
+[31m-%       - sEpoch            Epoch (timestamps) for each sleep/wake stages[m
+[31m-%       - subst             Substages done (yes=1; no=0)[m
+[31m-%[m
+[31m-% NOTES:[m
+[31m-%[m
+[31m-%   Written by Samuel Laventure - 2020-11/12[m
+[31m-%      [m
+[31m-%==========================================================================[m
+[31m-for isuj=1:length(dirPath)[m
+[31m-    switch evtType [m
+[31m-        case 'Ripples'[m
+[31m-            load([dirPath{isuj}{1} evtType '.mat'], evtType,[evtType 'Epoch'],'T');[m
+[31m-        case 'Spindles'[m
+[31m-            load([dirPath{isuj}{1} evtType '.mat'], evtType,[evtType 'Epoch_PFCx'],'T');[m
+[31m-    end[m
+[31m-    for istage=1:7[m
+[31m-        for isess=1:2[m
+[31m-            if ~(subst(isuj)) && istage>3 % special case: skip if no substage[m
+[31m-                evtmean.amp(isess,4:6,isuj) = nan;[m
+[31m-                evtmean.freq(isess,4:6,isuj) = nan;[m
+[31m-                evtmean.dur(isess,4:6,isuj) = nan;[m
+[31m-                evtmean.waveforms(isess,4:6,isuj,1:size(T,2)) = nan;[m
+[31m-                evtmean.globalden(isess,4:6,isuj) = nan;[m
+[31m-                evtmean.localden(isess,4:6,isuj) = nan;[m
+[31m-                istage=7;[m
+[31m-            end[m
+[31m-            evt.epoch{isuj,isess,istage} = and(RipplesEpoch,sEpoch{isess,istage});[m
+[31m-            % identify event indexes[m
+[31m-            idx = find(ismember(Start(RipplesEpoch),Start(evt.epoch{isuj,isess,istage})));[m
+[31m-            ripstart = Start(and(evt.epoch{isuj,isess,istage},sEpoch{isess,istage}));[m
+[31m-[m
+[31m-            evt.amp{isuj,isess,istage} = Ripples(idx,6);[m
+[31m-            evt.freq{isuj,isess,istage} = Ripples(idx,5); [m
+[31m-            evt.dur{isuj,isess,istage} = Ripples(idx,4); [m
+[31m-            evt.waveforms{isuj,isess,istage} = T(idx,1:size(T,2));[m
+[31m-[m
+[31m-            % calculate densities[m
+[31m-            numss = length(idx);       [m
+[31m-            sesslen = sum(Stop(sEpoch{isess,istage},'s')-Start(sEpoch{isess,istage},'s'));[m
+[31m-            % global density[m
+[31m-            evt.globalden{isuj,isess,istage} = numss/sesslen;[m
+[31m-            % local density[m
+[31m-            for ievt=1:length(ripstart)[m
+[31m-                numev(ievt) = length(find(ripstart<ripstart(ievt)+30*1E4 & ripstart>ripstart(ievt)-30*1E4));[m
+[31m-            end[m
+[31m-            evt.localden{isuj,isess,istage} = mean(numev);[m
+[31m-[m
+[31m-            evtmean.amp(isess,istage,isuj) = mean(evt.amp{isuj,isess,istage});[m
+[31m-            evtmean.freq(isess,istage,isuj) = mean(evt.freq{isuj,isess,istage});[m
+[31m-            evtmean.dur(isess,istage,isuj) = mean(evt.dur{isuj,isess,istage});[m
+[31m-            if ~isempty(evt.waveforms{isuj,isess,istage})[m
+[31m-                evtmean.waveforms(isess,istage,isuj,1:size(T,2)) ...[m
+[31m-                    = mean(evt.waveforms{isuj,isess,istage});[m
+[31m-            end[m
+[31m-            evtmean.globalden(isess,istage,isuj) = mean(evt.globalden{isuj,isess,istage});[m
+[31m-            evtmean.localden(isess,istage,isuj) = mean(evt.localden{isuj,isess,istage});[m
+[31m-        end[m
+[31m-    end[m
+[31m-end[m
+[31m-evt.params.orderName = {'mouse','session (pre/post)','sleep stage'};[m
+[31m-evtmean.params.orderName = {'session (pre/post)','sleep stage','mouse','data'};[m
+[31m-end[m
+\ No newline at end of file[m
+[1mdiff --git a/sleep/compRipStages.m b/sleep/compRipStages.m[m
+[1mindex 566c081..714bda2 100644[m
+[1m--- a/sleep/compRipStages.m[m
+[1m+++ b/sleep/compRipStages.m[m
+[36m@@ -209,8 +209,8 @@[m [mfigH.global = figure('Color',[1 1 1], 'rend','painters','pos',[1 1 1600 2200],'N[m
+         axP = get(gca,'Position');[m
+         b2=bar([-2],[ 1],'FaceColor','flat');[m
+         b1=bar([-3],[ 1],'FaceColor','flat');[m
+[31m-        b1.CData(1,:) = repmat([0 0 0],1);[m
+[31m-        b2.CData(1,:) = repmat([1 1 1],1);[m
+[32m+[m[32m        b1.CData(1,:) = repmat([1 1 1],1);[m
+[32m+[m[32m        b2.CData(1,:) = repmat([0 0 0],1);[m
+         legend([b1 b2],{'pre','post'},'Location','WestOutside')[m
+         set(gca, 'Position', axP)[m
+         [m
+[1mdiff --git a/sleep/sam_sleep_prevspost.m b/sleep/sam_sleep_prevspost.m[m
+[1mindex 2fadc65..9e5335a 100644[m
+[1m--- a/sleep/sam_sleep_prevspost.m[m
+[1m+++ b/sleep/sam_sleep_prevspost.m[m
+[36m@@ -1,9 +1,14 @@[m
+[31m-function sam_sleep_prevspost(expe, subj, varargin)[m
+[32m+[m[32mfunction figH = sam_sleep_prevspost(expe, subj, varargin)[m
+ %==========================================================================[m
+ % Details: Output details about sleep pre and post sessions[m
+ %[m
+ % INPUTS:[m
+[31m-%       - scoring_method: sleep scoring method: 'obgamma' or 'accelero' [m
+[32m+[m[32m%       - expe              Name of the experiment in PathForExperiment[m
+[32m+[m[32m%       - subj              Mice number to analyze[m
+[32m+[m[32m%[m[41m      [m
+[32m+[m[32m%   OPTIONS:[m
+[32m+[m[32m%       - stim              Default: 0; Put to 1 if you have stim during[m
+[32m+[m[32m%                           sleep[m
+ %[m
+ % OUTPUT:[m
+ %       - figure including:[m
+[36m@@ -13,11 +18,9 @@[m [mfunction sam_sleep_prevspost(expe, subj, varargin)[m
+ %           (mean)[m
+ %[m
+ % NOTES:[m
+[31m-%       - Does not work with NREM substage. Another script will have to be[m
+[31m-%       written[m
+ %[m
+ %   Original written by Samuel Laventure - 02-07-2019[m
+[31m-%   Modified on by SL - 29-11-2019[m
+[32m+[m[32m%   Modified on by SL - 29-11-2019, 2020-12[m
+ %      [m
+ %  see also, FindNREMfeatures, SubstagesScoring, MakeIDSleepData,PlotIDSleepData[m
+ %==========================================================================[m
+[36m@@ -33,16 +36,6 @@[m [mfor i = 1:2:length(varargin)[m
+             if stim~=0 && stim ~=1[m
+                 error('Incorrect value for property ''stim''.');[m
+             end[m
+[31m-        case 'recompute'[m
+[31m-            recompute = varargin{i+1};[m
+[31m-            if recompute~=0 && recompute ~=1[m
+[31m-                error('Incorrect value for property ''recompute''.');[m
+[31m-            end[m
+[31m-        case 'save_data'[m
+[31m-            save_data = varargin{i+1};[m
+[31m-            if save_data~=0 && save_data ~=1[m
+[31m-                error('Incorrect value for property ''save_data''.');[m
+[31m-            end[m
+         otherwise[m
+             error(['Unknown property ''' num2str(varargin{i}) '''.']);[m
+     end[m
+[36m@@ -53,31 +46,18 @@[m [mend[m
+ if ~exist('stim','var')[m
+     stim=0;[m
+ end[m
+[31m-%recompute?[m
+[31m-if ~exist('recompute','var')[m
+[31m-    recompute=0;[m
+[31m-end[m
+[31m-%save_data?[m
+[31m-if ~exist('save_data','var')[m
+[31m-    save_data=0;[m
+[31m-end[m
+ [m
+ [m
+ %% Parameters[m
+[31m-% Directory to save and name of the figure to save[m
+[31m-dir_out = [dropbox 'DataSL/StimMFBWake/Sleep/' date '/'];[m
+[31m-% dir_out = [dropbox '/DataSL/Novel/Sleep/Novel/' date '/'];[m
+[31m-[m
+[31m-%set folders[m
+[31m-if ~exist(dir_out,'dir')[m
+[31m-    mkdir(dir_out);[m
+[31m-end[m
+[31m-[m
+[31m-%% Get prep data[m
+[31m-% subj = [994]; % MFBStimWake[m
+[31m-[m
+ % Get directories[m
+[31m-Dir = PathForExperimentsERC_SL(expe);[m
+[32m+[m[32mif strcmp(expe,'StimMFBWake')[m
+[32m+[m[32m    Dir = PathForExperimentsERC_SL(expe);[m
+[32m+[m[32melseif strcmp(expe,'UMazePAG')[m[41m [m
+[32m+[m[32m    Dir = PathForExperimentsERC_Dima(expe);[m
+[32m+[m[32melse[m[41m    [m
+[32m+[m[32m    warning('Exited. Verify experiment name');[m
+[32m+[m[32m    return[m
+[32m+[m[32mend[m
+ Dir = RestrictPathForExperiment(Dir,'nMice', subj);[m
+ [m
+ % get sessions id and timepoints[m
+[36m@@ -89,23 +69,15 @@[m [mend[m
+ [id_post tdatpost] = RestrictSession(Dir,'PostSleep');[m
+     [m
+ % set text format[m
+[31m-set(0,'defaulttextinterpreter','latex');[m
+[31m-set(0,'DefaultTextFontname', 'Arial')[m
+[31m-set(0,'DefaultAxesFontName', 'Arial')[m
+[31m-set(0,'defaultTextFontSize',14)[m
+[31m-set(0,'defaultAxesFontSize',12)[m
+[32m+[m[32m% set(0,'defaulttextinterpreter','latex');[m
+[32m+[m[32m% set(0,'DefaultTextFontname', 'Arial')[m
+[32m+[m[32m% set(0,'DefaultAxesFontName', 'Arial')[m
+[32m+[m[32m% set(0,'defaultTextFontSize',14)[m
+[32m+[m[32m% set(0,'defaultAxesFontSize',12)[m
+ [m
+ %#####################################################################[m
+[31m-%#[m
+ %#                           M A I N[m
+[31m-%#[m
+ %#####################################################################[m
+[31m-[m
+[31m-%init var[m
+[31m-rem = [];[m
+[31m-nrem = [];[m
+[31m-wake = [];[m
+[31m-[m
+ % check if all mice have substages processed and load substaging[m
+ for isuj=1:length(Dir.path)[m
+     cd(Dir.path{1,isuj}{1})[m
+[36m@@ -191,10 +163,14 @@[m [mfor isubj=1:length(Dir.path)[m
+     stagdur_part(isubj,:,:) = stagdur;[m
+     stagperc_part(isubj,:,:) = stagperc;[m
+     [m
+[31m-    %% FIGURE by session[m
+[32m+[m[32m    %%[m
+[32m+[m[32m    %#####################################################################[m
+[32m+[m[32m    %#             F I G U R E S    B Y   S E S S I O N S[m
+[32m+[m[32m    %#####################################################################[m
+     % hypnogram[m
+     supertit = ['Mouse ' num2str(subj(isubj))  ' - Hypnograms'];[m
+[31m-    figure('Color',[1 1 1], 'rend','painters','pos',[10 10 1500 1200],'Name', supertit, 'NumberTitle','off')[m
+[32m+[m[32m    figH.SleepArch_single{isubj} = figure('Color',[1 1 1], 'rend','painters','pos', ...[m
+[32m+[m[32m        [10 10 1650 1200],'Name', supertit, 'NumberTitle','off');[m
+         %pre[m
+         subplot(3,2,1:2)[m
+             plot(Range(pre_SleepStages,'s')/3600,Data(pre_SleepStages),'k')[m
+[36m@@ -239,131 +215,131 @@[m [mfor isubj=1:length(Dir.path)[m
+             end[m
+ [m
+         subplot(3,2,5)[m
+[31m-            b1 = bar(stagdur/(1E4*60));[m
+[31m-            for ibar=1:size(stagdur,2)[m
+[31m-                b1(ibar).FaceColor = colori{ibar};[m
+[31m-            end[m
+[32m+[m[32m            b1 = bar(stagdur'/(1E4*60),1,'FaceColor','flat');[m
+[32m+[m[32m            b1(1,1).CData = [1 1 1];[m
+[32m+[m[32m            b1(1,2).CData = [0 0 0];[m
+[32m+[m[32m            xtips1 = b1(1).XData-.05;[m
+[32m+[m[32m            ytips1 = b1(1).YData;[m
+[32m+[m[32m            labels1 = string(round(b1(1).YData,1));[m
+[32m+[m[32m            xtips2 = b1(2).XData+.05;[m
+[32m+[m[32m            ytips2 = b1(2).YData;[m
+[32m+[m[32m            labels2 = string(round(b1(2).YData,1));[m
+[32m+[m[32m            text(xtips1,ytips1,labels1,'HorizontalAlignment','right',...[m
+[32m+[m[32m                'VerticalAlignment','bottom','Color',[.6 .6 .6])[m
+[32m+[m[32m            text(xtips2,ytips2,labels2,'HorizontalAlignment','left',...[m
+[32m+[m[32m                'VerticalAlignment','bottom','Color','black')[m
+             title('Stages duration (min)','FontSize',14)[m
+[31m-            set(gca,'XTickLabel',{'Pre-sleep','Post-sleep'})[m
+[32m+[m[32m            set(gca,'XTickLabel',ssnames)[m
+             xlabel('Stages')[m
+             ylabel('min')[m
+[32m+[m[32m            makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)[m
+[32m+[m[32m            % creating legend with hidden-fake data[m
+[32m+[m[32m            hold on[m
+[32m+[m[32m            axP = get(gca,'Position');[m
+[32m+[m[32m            c1=bar(nan(2,5),'FaceColor','flat');[m
+[32m+[m[32m            c1(1,1).CData = [1 1 1];[m
+[32m+[m[32m            c1(1,2).CData = [0 0 0];[m
+[32m+[m[32m            legend(c1,{'Pre-sleep','Post-sleep'},'location','WestOutside');[m
+[32m+[m[32m            set(gca, 'Position', axP)[m
+             [m
+         subplot(3,2,6)[m
+[31m-            b2 = bar(stagperc);[m
+[31m-            for ibar=1:size(stagperc,2)[m
+[31m-                b2(ibar).FaceColor = colori{ibar};[m
+[31m-            end[m
+[32m+[m[32m            b2 = bar(stagperc',1,'FaceColor','flat');[m
+[32m+[m[32m            b2(1,1).CData = [1 1 1];[m
+[32m+[m[32m            b2(1,2).CData = [0 0 0];[m
+[32m+[m[32m            xtips1 = b2(1).XData-.05;[m
+[32m+[m[32m            ytips1 = b2(1).YData;[m
+[32m+[m[32m            labels1 = string(round(b2(1).YData,1));[m
+[32m+[m[32m            xtips2 = b2(2).XData+.05;[m
+[32m+[m[32m            ytips2 = b2(2).YData;[m
+[32m+[m[32m            labels2 = string(round(b2(2).YData,1));[m
+[32m+[m[32m            text(xtips1,ytips1,labels1,'HorizontalAlignment','right',...[m
+[32m+[m[32m                'VerticalAlignment','bottom','Color',[.6 .6 .6])[m
+[32m+[m[32m            text(xtips2,ytips2,labels2,'HorizontalAlignment','left',...[m
+[32m+[m[32m                'VerticalAlignment','bottom','Color','black')[m
+             title('Stages duration percentage','FontSize',14)[m
+[31m-            set(gca,'XTickLabel',{'Pre-sleep','Post-sleep'})[m
+[32m+[m[32m            set(gca,'XTickLabel',ssnames)[m
+             xlabel('Stages')[m
+             ylabel('%')[m
+[31m-            % creating legend with hidden-fake data[m
+[31m-            hold on[m
+[31m-            axP = get(gca,'Position');[m
+[31m-            c1=bar(nan(2,5));[m
+[31m-            for i=1:length(ssnames)[m
+[31m-                c1(i).FaceColor=colori{i};[m
+[31m-            end[m
+[31m-            legend(c1,ssnames,'location','EastOutside');[m
+[31m-            set(gca, 'Position', axP)[m
+[31m-[m
+[31m-    %save figure[m
+[31m-    if save_data[m
+[31m-        print([dir_out 'M' num2str(subj(isubj)) '_sleeparch_prepost'], '-dpng', '-r300');[m
+[31m-    end[m
+[32m+[m[32m            makepretty_erc('fsizel',12,'lwidth',1.5,'fsizet',16)[m
+ end  [m
+[31m- [m
+[31m-%%  prep data for all mice[m
+[31m-% percentage[m
+[31m-ii=1;[m
+[31m-nremall(ii,1:isubj) = squeeze(stagperc_part(:,1,1));[m
+[31m-nremall(ii+1,1:isubj) = squeeze(stagperc_part(:,2,1));[m
+[31m-nremall(ii+2,1:isubj) = nan;[m
+[31m-remall(ii,1:isubj) = squeeze(stagperc_part(:,1,2));[m
+[31m-remall(ii+1,1:isubj) = squeeze(stagperc_part(:,2,2));[m
+[31m-remall(ii+2,1:isubj) = nan;[m
+[31m-wakeall(ii,1:isubj) = squeeze(stagperc_part(:,1,3));[m
+[31m-wakeall(ii+1,1:isubj) = squeeze(stagperc_part(:,2,3));[m
+[31m-wakeall(ii+2,1:isubj) = nan;[m
+[31m-[m
+[31m-% duration[m
+[31m-ii=1;[m
+[31m-nremalldur(ii,1:isubj) = squeeze(stagdur_part(:,1,1))/(1E4*60);[m
+[31m-nremalldur(ii+1,1:isubj) = squeeze(stagdur_part(:,2,1))/(1E4*60);[m
+[31m-nremalldur(ii+2,1:isubj) = nan;[m
+[31m-remalldur(ii,1:isubj) = squeeze(stagdur_part(:,1,2))/(1E4*60);[m
+[31m-remalldur(ii+1,1:isubj) = squeeze(stagdur_part(:,2,2))/(1E4*60);[m
+[31m-remalldur(ii+2,1:isubj) = nan;[m
+[31m-wakealldur(ii,1:isubj) = squeeze(stagdur_part(:,1,3))/(1E4*60);[m
+[31m-wakealldur(ii+1,1:isubj) = squeeze(stagdur_part(:,2,3))/(1E4*60);[m
+[31m-wakealldur(ii+2,1:isubj) = nan;[m
+[31m-[m
+[31m-save([dir_out 'sleeparch.mat'],'nremall','remall','wakeall','nremalldur','remalldur','wakealldur');[m
+[32m+[m[32m%[m[41m  [m
+[32m+[m[32m% %%  prep data for all mice[m
+[32m+[m[32m% % percentage[m
+[32m+[m[32m% ii=1;[m
+[32m+[m[32m% nremall(ii,1:isubj) = squeeze(stagperc_part(:,1,1));[m
+[32m+[m[32m% nremall(ii+1,1:isubj) = squeeze(stagperc_part(:,2,1));[m
+[32m+[m[32m% nremall(ii+2,1:isubj) = nan;[m
+[32m+[m[32m% remall(ii,1:isubj) = squeeze(stagperc_part(:,1,2));[m
+[32m+[m[32m% remall(ii+1,1:isubj) = squeeze(stagperc_part(:,2,2));[m
+[32m+[m[32m% remall(ii+2,1:isubj) = nan;[m
+[32m+[m[32m% wakeall(ii,1:isubj) = squeeze(stagperc_part(:,1,3));[m
+[32m+[m[32m% wakeall(ii+1,1:isubj) = squeeze(stagperc_part(:,2,3));[m
+[32m+[m[32m% wakeall(ii+2,1:isubj) = nan;[m
+[32m+[m[32m%[m[41m [m
+[32m+[m[32m% % duration[m
+[32m+[m[32m% ii=1;[m
+[32m+[m[32m% nremalldur(ii,1:isubj) = squeeze(stagdur_part(:,1,1))/(1E4*60);[m
+[32m+[m[32m% nremalldur(ii+1,1:isubj) = squeeze(stagdur_part(:,2,1))/(1E4*60);[m
+[32m+[m[32m% nremalldur(ii+2,1:isubj) = nan;[m
+[32m+[m[32m% remalldur(ii,1:isubj) = squeeze(stagdur_part(:,1,2))/(1E4*60);[m
+[32m+[m[32m% remalldur(ii+1,1:isubj) = squeeze(stagdur_part(:,2,2))/(1E4*60);[m
+[32m+[m[32m% remalldur(ii+2,1:isubj) = nan;[m
+[32m+[m[32m% wakealldur(ii,1:isubj) = squeeze(stagdur_part(:,1,3))/(1E4*60);[m
+[32m+[m[32m% wakealldur(ii+1,1:isubj) = squeeze(stagdur_part(:,2,3))/(1E4*60);[m
+[32m+[m[32m% wakealldur(ii+2,1:isubj) = nan;[m
+[32m+[m[32m%[m[41m [m
+[32m+[m[32m% save([dir_out 'sleeparch.mat'],'nremall','remall','wakeall','nremalldur','remalldur','wakealldur');[m
+[32m+[m[32m%[m[41m [m
+[32m+[m[32m%[m[41m [m
+[32m+[m[32m% %% FIGURE COMPARAISON[m
+[32m+[m[32m%     %Percentage pre vs post all mice[m
+[32m+[m[32m%     supertit = 'Sleep stages percentage pre vs post';[m
+[32m+[m[32m%[m[41m     [m
+[32m+[m[32m%     figure('Color',[1 1 1], 'rend','painters','pos',[1 1 600 400],'Name', supertit, 'NumberTitle','off')[m
+[32m+[m[32m%         [p,h, her] = PlotErrorBarN_SL([nremall' remall' wakeall'],...[m
+[32m+[m[32m%             'barwidth', .85, 'newfig', 0,...[m
+[32m+[m[32m%             'showPoints',0,'colorpoints',0,'barcolors',[.3 .3 .3]);[m[41m    [m
+[32m+[m[32m%         set(gca,'Xtick',[1:3:ssnb*3],'XtickLabel',{'           NREM','           REM','          WAKE'});[m
+[32m+[m[32m%         h.FaceColor = 'flat';[m
+[32m+[m[32m%         h.CData([2:3:ssnb*3],:) = repmat([1 1 1],3,1);[m
+[32m+[m[32m%         xlabel('Stages')[m
+[32m+[m[32m%         ylabel('%')[m
+[32m+[m[32m%         hold on[m
+[32m+[m[32m%         % creating legend with hidden-fake data (hugly but effective)[m
+[32m+[m[32m%             b2=bar([-2],[ 1],'FaceColor','flat');[m
+[32m+[m[32m%             b1=bar([-3],[ 1],'FaceColor','flat');[m
+[32m+[m[32m%             b1.CData(1,:) = repmat([.3 .3 .3],1);[m
+[32m+[m[32m%             b2.CData(1,:) = repmat([1 1 1],1);[m
+[32m+[m[32m%             legend([b1 b2],{'Pre-sleep','Post-sleep'})[m
+[32m+[m[32m%     %save figure[m
+[32m+[m[32m%     if save_data[m
+[32m+[m[32m%         print([dir_out 'all_sleeparch_perc_prepost'], '-dpng', '-r300');[m
+[32m+[m[32m%     end[m
+[32m+[m[32m%[m[41m     [m
+[32m+[m[32m%     % Duration pre vs post all mice[m
+[32m+[m[32m%     supertit = 'Sleep stages duration pre vs post';[m
+[32m+[m[32m%[m[41m     [m
+[32m+[m[32m%     figure('Color',[1 1 1], 'rend','painters','pos',[1 1 600 400],'Name', supertit, 'NumberTitle','off')[m
+[32m+[m[32m%         [p,h, her] = PlotErrorBarN_SL([nremalldur' remalldur' wakealldur'],...[m
+[32m+[m[32m%             'barwidth', 0.85, 'newfig', 0,...[m
+[32m+[m[32m%             'showPoints',0,'colorpoints',0,'barcolors',[.3 .3 .3]);[m[41m      [m
+[32m+[m[32m%         set(gca,'Xtick',[1:3:ssnb*3],'XtickLabel',{'           NREM','           REM','          WAKE'});[m
+[32m+[m[32m%         h.FaceColor = 'flat';[m
+[32m+[m[32m%         h.CData([2:3:ssnb*3],:) = repmat([1 1 1],3,1);[m
+[32m+[m[32m%         xlabel('Stages')[m
+[32m+[m[32m%         ylabel('Duration (min)')[m
+[32m+[m[32m%         hold on[m
+[32m+[m[32m%         % creating legend with hidden-fake data (hugly but effective)[m
+[32m+[m[32m%             b2=bar([-2],[ 1],'FaceColor','flat');[m
+[32m+[m[32m%             b1=bar([-3],[ 1],'FaceColor','flat');[m
+[32m+[m[32m%             b1.CData(1,:) = repmat([.3 .3 .3],1);[m
+[32m+[m[32m%             b2.CData(1,:) = repmat([1 1 1],1);[m
+[32m+[m[32m%             legend([b1 b2],{'Pre-sleep','Post-sleep'})[m
+[32m+[m[32m%     %save figure[m
+[32m+[m[32m%     if save_data[m
+[32m+[m[32m%         print([dir_out 'all_sleeparch_dur_prepost'], '-dpng', '-r300');[m
+[32m+[m[32m%     end[m
+ [m
+ [m
+[31m-%% FIGURE COMPARAISON[m
+[31m-    %Percentage pre vs post all mice[m
+[31m-    supertit = 'Sleep stages percentage pre vs post';[m
+[31m-    [m
+[31m-    figure('Color',[1 1 1], 'rend','painters','pos',[1 1 600 400],'Name', supertit, 'NumberTitle','off')[m
+[31m-        [p,h, her] = PlotErrorBarN_SL([nremall' remall' wakeall'],...[m
+[31m-            'barwidth', .85, 'newfig', 0,...[m
+[31m-            'showPoints',0,'colorpoints',0,'barcolors',[.3 .3 .3]);    [m
+[31m-        set(gca,'Xtick',[1:3:ssnb*3],'XtickLabel',{'           NREM','           REM','          WAKE'});[m
+[31m-        h.FaceColor = 'flat';[m
+[31m-        h.CData([2:3:ssnb*3],:) = repmat([1 1 1],3,1);[m
+[31m-        xlabel('Stages')[m
+[31m-        ylabel('%')[m
+[31m-        hold on[m
+[31m-        % creating legend with hidden-fake data (hugly but effective)[m
+[31m-            b2=bar([-2],[ 1],'FaceColor','flat');[m
+[31m-            b1=bar([-3],[ 1],'FaceColor','flat');[m
+[31m-            b1.CData(1,:) = repmat([.3 .3 .3],1);[m
+[31m-            b2.CData(1,:) = repmat([1 1 1],1);[m
+[31m-            legend([b1 b2],{'Pre-sleep','Post-sleep'})[m
+[31m-    %save figure[m
+[31m-    if save_data[m
+[31m-        print([dir_out 'all_sleeparch_perc_prepost'], '-dpng', '-r300');[m
+[31m-    end[m
+[31m-    [m
+[31m-    % Duration pre vs post all mice[m
+[31m-    supertit = 'Sleep stages duration pre vs post';[m
+[31m-    [m
+[31m-    figure('Color',[1 1 1], 'rend','painters','pos',[1 1 600 400],'Name', supertit, 'NumberTitle','off')[m
+[31m-        [p,h, her] = PlotErrorBarN_SL([nremalldur' remalldur' wakealldur'],...[m
+[31m-            'barwidth', 0.85, 'newfig', 0,...[m
+[31m-            'showPoints',0,'colorpoints',0,'barcolors',[.3 .3 .3]);      [m
+[31m-        set(gca,'Xtick',[1:3:ssnb*3],'XtickLabel',{'           NREM','           REM','          WAKE'});[m
+[31m-        h.FaceColor = 'flat';[m
+[31m-        h.CData([2:3:ssnb*3],:) = repmat([1 1 1],3,1);[m
+[31m-        xlabel('Stages')[m
+[31m-        ylabel('Duration (min)')[m
+[31m-        hold on[m
+[31m-        % creating legend with hidden-fake data (hugly but effective)[m
+[31m-            b2=bar([-2],[ 1],'FaceColor','flat');[m
+[31m-            b1=bar([-3],[ 1],'FaceColor','flat');[m
+[31m-            b1.CData(1,:) = repmat([.3 .3 .3],1);[m
+[31m-            b2.CData(1,:) = repmat([1 1 1],1);[m
+[31m-            legend([b1 b2],{'Pre-sleep','Post-sleep'})[m
+[31m-    %save figure[m
+[31m-    if save_data[m
+[31m-        print([dir_out 'all_sleeparch_dur_prepost'], '-dpng', '-r300');[m
+[31m-    end[m
+[31m-    [m
+[31m-[m
+[31m-    function [rem, nrem, wake] = get_sleepscoring(isubj, sscoring, tdat)[m
+[31m-        rem = and(sscoring.REMEpoch, tdat{isubj}{1});[m
+[31m-        nrem = and(sscoring.SWSEpoch, tdat{isubj}{1});[m
+[31m-        wake = and(sscoring.Wake, tdat{isubj}{1});[m
+[31m-    end[m
+[31m-    [m
+[31m-    function [n1, n2, n3, rem, wake] = get_subscoring(substg, tdat)[m
+[31m-        n1 = and(substg{1,1},tdat);[m
+[31m-        n2 = and(substg{1,2},tdat);[m
+[31m-        n3 = and(substg{1,3},tdat);[m
+[31m-        rem = and(substg{1,4},tdat);[m
+[31m-        wake = and(substg{1,5},tdat);[m
+[31m-    end[m
+[31m-[m
+ end[m
+ [m
+[1mdiff --git a/utils/figures/makepretty_erc.m~ b/utils/figures/makepretty_erc.m~[m
+[1mindex aa39855..d1c5047 100644[m
+[1m--- a/utils/figures/makepretty_erc.m~[m
+[1m+++ b/utils/figures/makepretty_erc.m~[m
+[36m@@ -1,6 +1,5 @@[m
+ [m
+[31m-[m
+[31m-function makepretty_erc(fsize,lwidth)[m
+[32m+[m[32mfunction makepretty_erc(varargin)[m
+ %==========================================================================[m
+ % Details: standardize axis/subplot/plot appearence[m
+ %[m
+[36m@@ -19,27 +18,41 @@[m [mfor i = 1:2:length(varargin)[m
+ 		error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help malepretty_erc">makepretty_erc</a>'' for details).']);[m
+ 	end[m
+ 	switch(lower(varargin{i}))[m
+[31m-        case 'fsize'[m
+[31m-            fsize =  varargin{i+1};[m
+[31m-            if ~isnumeric(fsize)[m
+[31m-				error('Incorrect value for property ''fsize''');[m
+[32m+[m[32m        case 'fsizel'[m
+[32m+[m[32m            fsizel =  varargin{i+1};[m
+[32m+[m[32m            if ~isnumeric(fsizel)[m
+[32m+[m				[32merror('Incorrect value for property ''fsizel''');[m
+             end[m
+[32m+[m[32m         case 'fsizet'[m
+[32m+[m			[32mfsizet = varargin{i+1};[m
+[32m+[m			[32mif ~isnumeric(fsizet)[m
+[32m+[m				[32merror('Incorrect value for property ''fsizet'' (type ''help <a href="matlab:help FindSpindlesSB">FindSpindlesSB</a>'' for details).');[m
+[32m+[m[32m            end[m[41m  [m
+ 		case 'lwidth'[m
+ 			lwidth = varargin{i+1};[m
+ 			if ~isnumeric(lwidth)[m
+ 				error('Incorrect value for property ''lwidth'' (type ''help <a href="matlab:help FindSpindlesSB">FindSpindlesSB</a>'' for details).');[m
+[31m-            end[m
+[32m+[m[32m            end[m[41m  [m
+     end    [m
+ end[m
+[31m-[m
+[32m+[m[32m%Default values[m[41m [m
+[32m+[m[32mif ~exist('fsizel','var')[m
+[32m+[m[32m    fsizel = 17;[m
+[32m+[m[32mend[m
+[32m+[m[32mif ~exist('fsizet','var')[m
+[32m+[m[32m    fsizel = 17;[m
+[32m+[m[32mend[m
+[32m+[m[32mif ~exist('lwidth','var')[m
+[32m+[m[32m    lwidth = 2;[m
+[32m+[m[32mend[m
+ [m
+ % set some graphical attributes of the current axis[m
+[31m-set(get(gca, 'XLabel'), 'FontSize', fsize);[m
+[31m-set(get(gca, 'YLabel'), 'FontSize', fsize);[m
+[32m+[m[32mset(get(gca, 'XLabel'), 'FontSize', fsizel);[m
+[32m+[m[32mset(get(gca, 'YLabel'), 'FontSize', fsizel);[m
+ set(gca, 'FontSize', 13);[m
+ box off[m
+[31m-set(gca,'Linewidth',1.6)[m
+[31m-set(get(gca, 'Title'), 'FontSize', 16);[m
+[32m+[m[32mset(gca,'Linewidth',lwidth)[m
+[32m+[m[32mset(get(gca, 'Title'), 'FontSize', fsizet);[m
+ [m
+ ch = get(gca, 'Children');[m
+ [m

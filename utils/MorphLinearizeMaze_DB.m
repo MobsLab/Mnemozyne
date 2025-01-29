@@ -22,6 +22,8 @@ function MorphLinearizeMaze_DB(nMice, varargin)
 
 %% Hyperparameters
 SessionNames = {'Hab', 'TestPreFakeStim', 'TestPre', 'Cond', 'CondPCDriven', 'TestPost', 'ExploAfter'};
+% SessionNames = {'TestPost', 'ExploAfter'};
+% SessionNames = {'ExploAfter'};
 
 %% Default values of optional arguments
 redo = false;
@@ -79,19 +81,19 @@ function MorphMaze(directory, redo)
 load([directory '/behavResources.mat']);
 
 
-if ~exist('CleanAlignedXtsd','var')
-    [CleanAlignedXtsd,CleanAlignedYtsd,CleanZoneEpochAligned,CleanXYOutput] = MorphMazeToSingleShape_EmbReact_DB...
-        (CleanXtsd,CleanYtsd, Zone{1}, ref, Ratio_IMAonREAL);
+if ~exist('AlignedXtsd','var')
+    [AlignedXtsd,AlignedYtsd,ZoneEpochAligned,XYOutput] = MorphMazeToSingleShape_EmbReact_DB...
+        (Xtsd,Ytsd, Zone{1}, ref, Ratio_IMAonREAL);
     
-    save([directory 'behavResources.mat'], 'CleanAlignedXtsd', 'CleanAlignedYtsd', 'CleanZoneEpochAligned',...
-        'CleanXYOutput',  '-append');
+    save([directory 'behavResources.mat'], 'AlignedXtsd', 'AlignedYtsd', 'ZoneEpochAligned',...
+        'XYOutput',  '-append');
 else
     if redo
-        [CleanAlignedXtsd,CleanAlignedYtsd,CleanZoneEpochAligned,CleanXYOutput] = MorphMazeToSingleShape_EmbReact_DB...
-            (CleanXtsd,CleanYtsd, Zone{1}, ref, Ratio_IMAonREAL);
+        [AlignedXtsd,AlignedYtsd,ZoneEpochAligned,XYOutput] = MorphMazeToSingleShape_EmbReact_DB...
+            (Xtsd,Ytsd, Zone{1}, ref, Ratio_IMAonREAL);
         
-        save([directory 'behavResources.mat'], 'CleanAlignedXtsd', 'CleanAlignedYtsd', 'CleanZoneEpochAligned',...
-            'CleanXYOutput',  '-append');
+        save([directory 'behavResources.mat'], 'AlignedXtsd', 'AlignedYtsd', 'ZoneEpochAligned',...
+            'XYOutput',  '-append');
     end
 end
 close all
@@ -103,7 +105,7 @@ function LinearizeMaze(directory, redo)
 
 load([directory '/behavResources.mat']);
 
-if ~exist('CleanLinearDist','var')
+if ~exist('LinearDist','var')
     
     figure('units', 'normalized', 'outerposition', [0 1 0.5 0.8]);
     
@@ -112,9 +114,9 @@ if ~exist('CleanLinearDist','var')
     curvexy=ginput(4);
     clf
     
-    xxx = Data(CleanYtsd)';
-    yyy = Data(CleanXtsd)';
-    mapxy=[Data(CleanYtsd)'; Data(CleanXtsd)']';
+    xxx = Data(Ytsd)';
+    yyy = Data(Xtsd)';
+    mapxy=[Data(Ytsd)'; Data(Xtsd)']';
     [xy,distance,t] = distance2curve(curvexy,mapxy*Ratio_IMAonREAL,'linear');
     
     t(isnan(xxx))=NaN;
@@ -122,17 +124,17 @@ if ~exist('CleanLinearDist','var')
     subplot(211)
     imagesc(mask+Zone{1})
     hold on
-    plot(Data(CleanYtsd)'*Ratio_IMAonREAL,Data(CleanXtsd)'*Ratio_IMAonREAL)
+    plot(Data(Ytsd)'*Ratio_IMAonREAL,Data(Xtsd)'*Ratio_IMAonREAL)
     subplot(212)
     plot(t), ylim([0 1])
     
-    saveas(gcf,[directory 'Cleanlineartraj.fig']);
-    saveFigure(gcf,'Cleanlineartraj', directory);
+    saveas(gcf,[directory 'lineartraj.fig']);
+    saveFigure(gcf,'lineartraj', directory);
     close(gcf);
     
-    CleanLinearDist=tsd(Range(CleanXtsd),t);
+    LinearDist=tsd(Range(Xtsd),t);
     
-    save([directory 'behavResources.mat'], 'CleanLinearDist','-append');
+    save([directory 'behavResources.mat'], 'LinearDist','-append');
 else
     if redo
         figure('units', 'normalized', 'outerposition', [0 1 0.5 0.8]);
@@ -142,9 +144,9 @@ else
         curvexy=ginput(4);
         clf
         
-        xxx = Data(CleanYtsd)';
-        yyy = Data(CleanXtsd)';
-        mapxy=[Data(CleanYtsd)'; Data(CleanXtsd)']';
+        xxx = Data(Ytsd)';
+        yyy = Data(Xtsd)';
+        mapxy=[Data(Ytsd)'; Data(Xtsd)']';
         [xy,distance,t] = distance2curve(curvexy,mapxy*Ratio_IMAonREAL,'linear');
         
         t(isnan(xxx))=NaN;
@@ -152,17 +154,17 @@ else
         subplot(211)
         imagesc(mask+Zone{1})
         hold on
-        plot(Data(CleanYtsd)'*Ratio_IMAonREAL,Data(CleanXtsd)'*Ratio_IMAonREAL)
+        plot(Data(Ytsd)'*Ratio_IMAonREAL,Data(Xtsd)'*Ratio_IMAonREAL)
         subplot(212)
         plot(t), ylim([0 1])
         
-        saveas(gcf,[directory 'Cleanlineartraj.fig']);
-        saveFigure(gcf,'Cleanlineartraj', directory);
+        saveas(gcf,[directory 'lineartraj.fig']);
+        saveFigure(gcf,'lineartraj', directory);
         close(gcf);
         
-        CleanLinearDist=tsd(Range(CleanXtsd),t);
+        LinearDist=tsd(Range(Xtsd),t);
         
-        save([directory 'behavResources.mat'], 'CleanLinearDist','-append');
+        save([directory 'behavResources.mat'], 'LinearDist','-append');
     end
 end
 

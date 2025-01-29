@@ -1,4 +1,4 @@
-function [map, mapNS, stats, px, py, FR, xB, yB]=PlaceField_DB(tsa, XS, YS, varargin)
+function [map, mapNS, stats, px, py, FR, xB, yB, lEpoch]=PlaceField_DB(tsa, XS, YS, varargin)
 
 % INPUT
 %
@@ -12,7 +12,7 @@ function [map, mapNS, stats, px, py, FR, xB, yB]=PlaceField_DB(tsa, XS, YS, vara
 %     smoothing      spatial smooting factor (default - 3)
 %     freqVideo      sampling rate of the video (default - 15)
 %     threshold      to define place field which is area around peak where FR >= threshold*peak (default - 0.5)
-%     sizemap           size of the map (it will be size * size) in pixels
+%     sizemap        size of the map (it will be size * size) in pixels
 %     LargeMatrix    if 1 edges will be added to maps (default - 1 or True)
 %     PlotResults    plot the main figure (occupancy, spike counts, rate maps + movements) (default - 1)
 %     PlotPoisson    plot the figure that compares the actual rate map with rate maps of the poisson-distributed set of the same data (default - 1)
@@ -33,7 +33,7 @@ function [map, mapNS, stats, px, py, FR, xB, yB]=PlaceField_DB(tsa, XS, YS, vara
 %     stats.fieldX   firing field x boundaries (in bins)
 %     stats.fieldY   firing field y boundaries (in bins)
 %     px             x-coordinates of spikes
-%     py             y-coordinates of spikes
+%     py             y-coordinates of spikeslEpoch
 %     FR             firing rate of a neuron in a given epoch
 %     xB             x-coordinates of spatial bins' centers
 %     yB             y-coordinates of spatial bins' centers
@@ -113,7 +113,7 @@ for i=1:2:length(varargin)
             if ~isa(sizeMap,'numeric')
                 error('Incorrect value for property ''Size'' (type ''help PlaceField_DB'' for details).');
             end
-            
+
         case 'largematrix'
             LMatrix = varargin{i+1};
             if ~isa(LMatrix,'logical')
@@ -147,6 +147,7 @@ end
 
 %% Check if the input variables are not empty
 flagstop = false;
+lEpoch=[];
 
 if isempty(Data(XS)) || isempty(Data(YS))
     flagstop = true;
@@ -220,8 +221,8 @@ else
     if LMatrix
         largerMatrix = zeros(sizeMap+floor(sizeMap/4),sizeMap+floor(sizeMap/4));
         largerMatrix(1+floor(sizeMap/8):sizeMap+floor(sizeMap/8),1+floor(sizeMap/8):sizeMap+floor(sizeMap/8)) = occH';
-        largerMatrix=SmoothDec(largerMatrix,[smo,smo]);
         mapNS.time = largerMatrix/freqVideo;
+        largerMatrix=SmoothDec(largerMatrix,[smo,smo]);
         map.time=largerMatrix/freqVideo;
     else
         mapNS.time = occH';
@@ -293,6 +294,7 @@ else
     % Find firing rate
     if isempty(epoch)
         rg=Range(XS,'s');
+        lEpoch = (rg(end)-rg(1));
         if ~isempty(rg)
             FR=length(Range(tsa))/(rg(end)-rg(1));
         else
@@ -414,6 +416,11 @@ else
         subplot(3,2,5:6), hold on,
         plot(Range(XS,'s'),Data(XS))
         plot(Range(YS,'s'),Data(YS),'g')
+        
+        % add by BM on 09/04/2024
+        maxy = max(Data(YS));
+        maxx = max(Data(XS));
+        
         if maxy > maxx
             plot(Range(tsa,'s'),1.5*maxy*ones(length(Range(tsa,'s')),1),'r.')
         else

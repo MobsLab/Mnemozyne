@@ -76,7 +76,9 @@ axes(PyrInt_Axes);
 pieid  = pie([AllPyr AllInt]);
 legend ({'Principal cells', 'Interneurons'}, 'Position', [0.28 0.96 0.17 0.035]);
 pieid(1).FaceColor = [0 0.484 0.87];
-pieid(3).FaceColor = [0.85 0.094 0.082];
+if AllInt > 0
+    pieid(3).FaceColor = [0.85 0.094 0.082];
+end
 title(['MUA/SUA = ', sprintf('%2i', num_MUA), '/', sprintf('%2i', num_SUA),...
     ', N of PC = ', sprintf('%3i',AllPyr), ', N of Int = ', sprintf('%3i',AllInt)]);
 
@@ -129,21 +131,30 @@ title('Firing rates of all SUA');
 % % [p_fr,h_fr, her_fr] = PlotErrorBarN_DB(FR_tocomp, 'barcolors', [0 0 0], 'barwidth', 0.6, 'newfig', 0,'showpoints',0);
 
 % Box plot
-FR_tocomp = {BasicNeuronInfo.FR_WakeTheta(id_Pyr); BasicNeuronInfo.FR_WakeTheta(id_Int);...
-    BasicNeuronInfo.FR_WakeNoTheta(id_Pyr); BasicNeuronInfo.FR_WakeNoTheta(id_Int);...
-    BasicNeuronInfo.FR_SWS(id_Pyr); BasicNeuronInfo.FR_SWS(id_Int);...
-    BasicNeuronInfo.FR_REM(id_Pyr); BasicNeuronInfo.FR_REM(id_Int)};
+if AllInt > 1
+    FR_tocomp = {BasicNeuronInfo.FR_WakeTheta(id_Pyr); BasicNeuronInfo.FR_WakeTheta(id_Int);...
+        BasicNeuronInfo.FR_WakeNoTheta(id_Pyr); BasicNeuronInfo.FR_WakeNoTheta(id_Int);...
+        BasicNeuronInfo.FR_SWS(id_Pyr); BasicNeuronInfo.FR_SWS(id_Int);...
+        BasicNeuronInfo.FR_REM(id_Pyr); BasicNeuronInfo.FR_REM(id_Int)};
+    Cols = {[0 0 0.9], [0.9 0 0], [0 0 0.9], [0.9 0 0],[0 0 0.9], [0.9 0 0],[0 0 0.9], [0.9 0 0]};
+    axes(CompareFR_Axes); %% Pyr/Int
+    MakeSpreadAndBoxPlot_SB(FR_tocomp,Cols,[1:8], {}, 1, 0);
+else
+    FR_tocomp = {BasicNeuronInfo.FR_WakeTheta(id_Pyr); BasicNeuronInfo.FR_WakeNoTheta(id_Pyr);...
+        BasicNeuronInfo.FR_SWS(id_Pyr); BasicNeuronInfo.FR_REM(id_Pyr)};
+    Cols = {[0 0 0.9], [0 0 0.9], [0 0 0.9], [0 0 0.9]};
+    axes(CompareFR_Axes); %% Pyr/Int
+    MakeSpreadAndBoxPlot_SB(FR_tocomp,Cols,[1:4], {}, 1, 0);
+end
 % FR_std_up = [std(BasicNeuronInfo.FR_WakeTheta(id_Pyr)) std(BasicNeuronInfo.FR_WakeTheta(id_Int));...
 %     std(BasicNeuronInfo.FR_WakeNoTheta(id_Pyr)) std(BasicNeuronInfo.FR_WakeNoTheta(id_Int));...
 %     std(BasicNeuronInfo.FR_SWS(id_Pyr)) std(BasicNeuronInfo.FR_SWS(id_Int));...
 %     std(BasicNeuronInfo.FR_REM(id_Pyr)) std(BasicNeuronInfo.FR_REM(id_Int))];
 % FR_std_down = [0 0; 0 0; 0 0; 0 0];
 % FR_std = cat(3,FR_std_down,FR_std_up);
-Cols = {[0 0 0.9], [0.9 0 0], [0 0 0.9], [0.9 0 0],[0 0 0.9], [0.9 0 0],[0 0 0.9], [0.9 0 0]};
 
 
-axes(CompareFR_Axes); %% Pyr/Int
-MakeSpreadAndBoxPlot_SB(FR_tocomp,Cols,[1:8], {}, 1, 0);
+
 set(gca,'LineWidth',3,'FontWeight','bold','FontSize',10,'XTick',1.5:2:7.5,...
     'XTickLabel',{'WakeTheta','WakeNoTheta','SWS','REM'})
 ylabel('Mean firing rate (Hz)', 'FontWeight','bold','FontSize',14);

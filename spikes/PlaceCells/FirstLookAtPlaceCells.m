@@ -69,7 +69,7 @@ for isess = 1:length(SessionIS)
         end
     end
     mtit(f1, SessionNames{isess}, 'FontSize', 16, 'xoff', 0, 'yoff', 0.01, 'zoff', 0.04);
-    % Save
+%     % Save
     saveas(f1, [pwd '/PlaceCells/RateMap_' SessionNames{isess} '.fig']);
     saveFigure(f1, ['RateMap_' SessionNames{isess}], [pwd '/PlaceCells/']);
     

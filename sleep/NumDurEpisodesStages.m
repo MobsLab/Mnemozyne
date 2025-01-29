@@ -15,13 +15,14 @@
 
 %% Parameters
 % Mice that go in the analysis
-nmouse = [797 798 828 861 882 905 906 911 912 977 994];
+% nmouse = [797 798 828 861 882 905 906 911 912 977 994 1117 1124 1161 1162 1168 1182 1186 1199];
+nmouse = [1117 1161 1162 1168 1199]; % MFB
 % nmouse = [906 912]; % Had PreMazes
 % nmouse = [905 911]; % Did not have PreMazes
 
 % Get paths
-Dir = PathForExperimentsERC_Dima('UMazePAG');
-% Dir = PathForExperimentsERC_DimaMAC('UMazePAG');
+Dir = PathForExperimentsERC('UMazePAG');
+% Dir = PathForExperimentsERC('StimMFBWake');
 Dir = RestrictPathForExperiment(Dir,'nMice',nmouse);
 
 % Sleep time to restrict
@@ -71,10 +72,10 @@ DurNREMPost_lastH = cell(length(Dir.path), 1);
 
 for i=1:length(Dir.path)
     behav{i} = load([Dir.path{i}{1} 'behavResources.mat'],'SessionEpoch');
-    if strcmp(Dir.name{i}, 'Mouse906') || strcmp(Dir.name{i}, 'Mouse977') % Mice with bad OB-based sleep scoring
-        sleep{i} = load([Dir.path{i}{1} 'SleepScoring_Accelero.mat'],'SWSEpoch','REMEpoch','Sleep'); % Sleep is not used
-    else
+    try
         sleep{i} = load([Dir.path{i}{1} 'SleepScoring_OBGamma.mat'],'SWSEpoch','REMEpoch','Sleep');  % Sleep is not used
+    catch
+        sleep{i} = load([Dir.path{i}{1} 'SleepScoring_Accelero.mat'],'SWSEpoch','REMEpoch','Sleep'); % Sleep is not used
     end
 end
 
@@ -236,7 +237,8 @@ end
 %%%%%%%%%%% WHOLE SLEEP SESSION %%%%%%%%%%%%%%%%%%%%%%%%%
 % NREM Sleep
 Pl = {NumNREMPre, NumNREMPost; lenNREMPre, lenNREMPost; Dur.Pre.NREM, Dur.Post.NREM};
-Cols = {[0.7 0.7 0.7], [0.2 0.2 0.2]};
+% Cols = {[.9856, .7372, .2537], [1 0 1]};
+Cols = {[.9856, .7372, .2537], [.16 .95 1]}; % MFB
 xlabs = {'PreNREM','PostNREM'};
 ylabs = {'# episodes', 'Duration (s)', 'Mean duration (s)'};
 tits = {'Number of episodes', 'Overall length', 'Duration of episodes'};
@@ -244,26 +246,44 @@ f1 = figure('units', 'normalized', 'outerposition', [0 0 0.9 0.55]);
 ax = arrayfun(@(i) subplot(1,3,i, 'NextPlot', 'add', 'Box', 'off'), [1:3]);
 for i=1:2
     axes(ax(i));
-    MakeBoxPlot_DB(Pl(i,:),Cols,1:2,[],1);
+    b = MakeBoxPlot_DB(Pl(i,:),Cols,1:2,[],1);
     set(gca,'XTick', [1:2], 'XTickLabel', xlabs,...
         'FontSize', 16, 'FontWeight', 'bold');
+    for iplot = 1:length(b)
+        b{iplot}.boxAlpha = .7;
+    end
+    p = DoWilcoxonOnArray(Pl(i,:), {[1 2]});
+    if p <= 0.05
+        sigstar_DB([1 2],p,0,'LineWigth',16,'StarSize',24);
+    end
+    if i==1
+        ylim([18 163]);
+    elseif i==2
+        ylim([2000 6110]);
+    end
     ylabel(ylabs{i});
     title(tits{i});
 end
 axes(ax(3));
 MakeBoxPlot_DB(Pl(3,:),Cols,1:2,[],0);
 set(gca,'XTick', [1:2], 'XTickLabel', xlabs,...
-        'FontSize', 16, 'FontWeight', 'bold');
+    'FontSize', 16, 'FontWeight', 'bold');
+p = DoWilcoxonOnArray(Pl(3,:), {[1 2]});
+if p <= 0.05
+    sigstar_DB([1 2],p,0,'LineWigth',16,'StarSize',24);
+end
+ylim([0 300]);
 ylabel(ylabs{3})
 title(tits{3});
 if savfig
-    saveas(f1,[dropbox pathfig 'NREMSleepChar.fig']);
-    saveFigure(f1,'NREMSleepChar',[dropbox pathfig]);
+%     saveas(f1,[dropbox pathfig 'NREMSleepChar.fig']);
+%     saveFigure(f1,'NREMSleepChar',[dropbox pathfig]);
+    saveas(f1,[dropbox pathfig 'NREMSleepChar_MFB.fig']);
+    saveFigure(f1,'NREMSleepChar_MFB',[dropbox pathfig]);
 end
 
 % REM Sleep
 Pl = {NumREMPre, NumREMPost; lenREMPre, lenREMPost; Dur.Pre.REM, Dur.Post.REM};
-Cols = {[0.7 0.7 0.7], [0.2 0.2 0.2]};
 xlabs = {'PreREM','PostREM'};
 ylabs = {'# episodes', 'Duration (s)', 'Mean duration (s)'};
 tits = {'Number of episodes', 'Overall length', 'Duration of episodes'};
@@ -271,9 +291,21 @@ f2 = figure('units', 'normalized', 'outerposition', [0 0 0.9 0.55]);
 ax = arrayfun(@(i) subplot(1,3,i, 'NextPlot', 'add', 'Box', 'off'), [1:3]);
 for i=1:2
     axes(ax(i));
-    MakeBoxPlot_DB(Pl(i,:),Cols,1:2,[],1);
+    b = MakeBoxPlot_DB(Pl(i,:),Cols,1:2,[],1);
     set(gca,'XTick', [1:2], 'XTickLabel', xlabs,...
         'FontSize', 16, 'FontWeight', 'bold');
+    for iplot = 1:length(b)
+        b{iplot}.boxAlpha = .7;
+    end
+    p = DoWilcoxonOnArray(Pl(i,:), {[1 2]});
+    if p <= 0.05
+        sigstar_DB([1 2],p,0,'LineWigth',16,'StarSize',24);
+    end
+    if i==1
+        ylim([0 55]);
+    elseif i==2
+        ylim([0 1650]);
+    end
     ylabel(ylabs{i});
     title(tits{i});
 end
@@ -281,17 +313,23 @@ axes(ax(3));
 MakeBoxPlot_DB(Pl(3,:),Cols,1:2,[],0);
 set(gca,'XTick', [1:2], 'XTickLabel', xlabs,...
         'FontSize', 16, 'FontWeight', 'bold');
+p = DoWilcoxonOnArray(Pl(3,:), {[1 2]});
+if p <= 0.05
+    sigstar_DB([1 2],p,0,'LineWigth',16,'StarSize',24);
+end
+ylim([0 70]);    
 ylabel(ylabs{3})
 title(tits{3});
 if savfig
-    saveas(f2,[dropbox pathfig 'REMSleepChar.fig']);
-    saveFigure(f2,'REMSleepChar',[dropbox pathfig]);
+%     saveas(f2,[dropbox pathfig 'REMSleepChar.fig']);
+%     saveFigure(f2,'REMSleepChar',[dropbox pathfig]);
+    saveas(f2,[dropbox pathfig 'REMSleepChar_MFB.fig']);
+    saveFigure(f2,'REMSleepChar_MFB',[dropbox pathfig]);
 end
 %%%%%%%%%%% WHOLE SLEEP SESSION %%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%% SECOND HOUR HOUR %%%%%%%%%%%%%%%%%%%%%%%%%
 Pl = {numNREMPre_lastH, numNREMPost_lastH; lenNREMPre_lastH, lenNREMPost_lastH; Dur_last.Pre.NREM, Dur_last.Post.NREM};
-Cols = {[0.7 0.7 0.7], [0.2 0.2 0.2]};
 xlabs = {'PreNREM','PostNREM'};
 tits = {'Number of episodes', 'Overall length', 'Duration of episodes'};
 f3 = figure('units', 'normalized', 'outerposition', [0 0 0.9 0.55]);
@@ -301,6 +339,9 @@ for i=1:2
     MakeBoxPlot_DB(Pl(i,:),Cols,1:2,[],1);
     set(gca,'XTick', [1:2], 'XTickLabel', xlabs,...
         'FontSize', 16, 'FontWeight', 'bold');
+    for iplot = 1:length(b)
+        b{iplot}.boxAlpha = .7;
+    end
     ylabel(ylabs{i});
     title(tits{i});
 end
@@ -311,7 +352,9 @@ set(gca,'XTick', [1:2], 'XTickLabel', xlabs,...
 ylabel(ylabs{3})
 title(tits{3});
 if savfig
-    saveas(f3,[dropbox pathfig 'NREM_lasthour_SleepChar.fig']);
-    saveFigure(f3,'NREM_lasthour_SleepChar',[dropbox pathfig]);
+%     saveas(f3,[dropbox pathfig 'NREM_lasthour_SleepChar.fig']);
+%     saveFigure(f3,'NREM_lasthour_SleepChar',[dropbox pathfig]);
+    saveas(f3,[dropbox pathfig 'NREM_lasthour_SleepChar_MFB.fig']);
+    saveFigure(f3,'NREM_lasthour_SleepChar_MFB',[dropbox pathfig]);
 end
 %%%%%%%%%%% SECOND HOUR HOUR %%%%%%%%%%%%%%%%%%%%%%%%%

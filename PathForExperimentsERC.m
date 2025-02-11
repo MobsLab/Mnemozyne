@@ -21,27 +21,18 @@ ECG_All = [1 3 5 6 9 10 14 15]; % Good ECG
 a=0;
 %%
 
-%  '1239vBasile': 'TEST3_Basile_M1239/TEST',
-%  '1281vBasile': 'TEST3_Basile_1281MFB/TEST',
-%  '1199': 'TEST1_Basile/TEST',
-%  '1336': 'Known_M1336/TEST/',
-%  '1168MFB': 'DataERC2/M1168/TEST/',
-%  '905': 'DataERC2/M905/TEST/',
-%  '1161w1199': 'DataERC2/M1161/TEST_with_1199_model/',
-%  '1161': 'DataERC2/M1161/TEST initial/',
-%  '1124': 'DataERC2/M1124/TEST/',
-%  '1186': 'DataERC2/M1186/TEST/',
-%  '1182': 'DataERC2/M1182/TEST/',
-%  '1168UMaze': 'DataERC1/M1168/TEST/',
-%  '1117': 'DataERC1/M1117/TEST/',
-%  '994': 'neuroencoders_1021/_work/M994_PAG/Final_results_v3',
-%  '1336v3': 'neuroencoders_1021/_work/M1336_MFB/Final_results_v3',
-%  '1336v2': 'neuroencoders_1021/_work/M1336_known/Final_results_v2',
-%  '1281v2': 'neuroencoders_1021/_work/M1281_MFB/Final_results_v2',
-%  '1239v3': 'neuroencoders_1021/_work/M1239_MFB/Final_results_v3'
-%
+% -----------------------------------------------------------
+% |    MFB         |   UMazePAG      |   Reversal          |
+% -----------------------------------------------------------
+% | M1336_MFB      | M1186           | M1199_reversal      |
+% | M1117          | M1199_PAG       |                     |
+% | M1281_MFB      | M1182           |                     |
+% | M1168MFB       | M994_PAG        |                     |
+% | M1239_MFB      |                 |                     |
+% -----------------------------------------------------------
 
 pathdir = '/home/mickey/Documents/Theotime/DimaERC2';
+
 python_dict = dictionary(m1239vBasile= 'M1239TEST3_Basile_M1239/TEST/', m1281vBasile= 'M1281TEST3_Basile_1281MFB/TEST/', ...
     m1199= 'M1199TEST1_Basile/TEST/', m1336= 'M1336_Known/TEST/', m1168MFB= 'DataERC2/M1168/TEST/', m905= 'DataERC2/M905/TEST/', ...
     m1161w1199= 'DataERC2/M1161/TEST_with_1199_model/', m1161= 'DataERC2/M1161/TEST initial/', ...
@@ -51,22 +42,32 @@ python_dict = dictionary(m1239vBasile= 'M1239TEST3_Basile_M1239/TEST/', m1281vBa
     m1336v2= 'neuroencoders_1021/_work/M1336_known/Final_results_v2', m1281v2= 'neuroencoders_1021/_work/M1281_MFB/Final_results_v2', ...
     m1239v3= 'neuroencoders_1021/_work/M1239_MFB/Final_results_v3');
 
-matlab_dict=dictionary(python_dict);
-% Assuming matlab_dict is already defined and populated
-keyss = keys(matlab_dict); % Extract keys from the dictionary
-valuess = values(matlab_dict); % Extract values from the dictionary
+subpython_dict = dictionary(...
+    m1336_known = 'neuroencoders_1021/_work/M1336_known/Final_results_v2/',... %%Known
+    m1336_mfb = 'neuroencoders_1021/_work/M1336_MFB/Final_results_v3/',... %%MFB
+    m1186= 'DataERC2/M1186/TEST/', ... %%UMazePAG
+    m1199_pag = 'neuroencoders_1021/_work/M1199_PAG/Final_results_v3/', ... %%UMazePAG
+    m1199_reversal = 'neuroencoders_1021/_work/M1199_reversal/Final_results_v3/', ... %%Reversal
+    m1117= 'DataERC1/M1117/TEST/', ... %%MFB
+    m1281_mfb = 'neuroencoders_1021/_work/M1281_MFB/Final_results_v2/', ...  %%MFB
+    m1168MFB= 'DataERC1/M1168/TEST/', ... %%MFB
+    m1182= 'DataERC2/M1182/TEST/', ... %PAG
+    m994_PAG = 'neuroencoders_1021/_work/M994_PAG/Final_results_v3/',... %%PAG
+    m1239v3= 'neuroencoders_1021/_work/M1239_MFB/Final_results_v3/'); %%MFB
 
-subpython_dict = dictionary(m1336= 'M1336_Known/TEST/', ...
-    m1186= 'DataERC2/M1186/TEST/', ...
-    m1199= 'M1199TEST1_Basile/TEST/', m1117= 'DataERC1/M1117/TEST/', ...
-    m1336v3= 'neuroencoders_1021/_work/M1336_MFB/Final_results_v3/', ...
-    m1281v2= 'neuroencoders_1021/_work/M1281_MFB/Final_results_v2/', m1168UMaze= 'DataERC1/M1168/TEST/', ...
-    m1182= 'DataERC2/M1182/TEST/', m1336v2= 'neuroencoders_1021/_work/M1336_known/Final_results_v2/');
-% m1239v3= 'neuroencoders_1021/_work/M1239_MFB/Final_results_v3/', ...
-% m994= 'neuroencoders_1021/_work/M994_PAG/Final_results_v3/',
+subpython_REAL = dictionary(...
+    m1336_known = '/media/nas7/ProjetERC1/Known/M1336/',...
+    m1336_mfb = '/media/nas7/ProjetERC1/StimMFBWake/M1336/',...
+    m1186= '/media/nas6/ProjetERC2/Mouse-K186/20210409/_Concatenated/', ...
+    m1199_pag = '/media/nas6/ProjetERC2/Mouse-K199/20210408/_Concatenated/', ...
+    m1199_reversal = '/media/nas6/ProjetERC3/M1199/Reversal/', ...
+    m1117= '/media/nas5/ProjetERC1/StimMFBWake/M1117/', ...
+    m1281_mfb = '/media/nas7/ProjetERC1/StimMFBWake/M1281/', ...
+    m1168UMFB= '/media/nas5/ProjetERC1/StimMFBWake/M1168/', ...
+    m1182= '/media/nas6/ProjetERC2/Mouse-K182/20200301/_Concatenated/', ...
+    m994_PAG = '/media/nas5/ProjetERC2/Mouse-994/20191013/PagExp/_Concatenated/',...
+    m1239v3= '/media/nas6/ProjetERC1/StimMFBWake/M1239/Exp2/');
 
-
-submatlab_dict=dictionary(subpython_dict);
 
 Dir.path = {}; % Initialize a cell array for paths
 Dir.ExpeInfo = {}; % Initialize a cell array for ExpeInfo
@@ -74,22 +75,20 @@ a = 0; % Initialize counter
 
 
 if strcmp(experimentName,'All')
-    keyss = keys(matlab_dict);
-    valuess = values(matlab_dict);
-    for i = 1:numel(keyss)
-        a = a + 1;
-        currentKey = keyss{i};
-        resultsPath = valuess{i};
+    valuess = values(python_dict);
+    for a = 1:numel(valuess)
+        resultsPath = valuess{a};
         currentPath = fullfile(resultsPath, '..');
 
         % Assign path
-        Dir.path{a}{1} = fullfile(pathdir, currentPath);
-        Dir.results{a}{1} = fullfile(pathdir, resultsPath);
+        Dir.path{a}{1}=cd(cd(fullfile(pathdir, currentPath)));
+        Dir.results{a}{1}=fullfile(pathdir, resultsPath);
+
 
         % Load ExpeInfo
         expeInfoFile = fullfile(Dir.path{a}{1}, 'ExpeInfo.mat');
         if isfile(expeInfoFile)
-            load(expeInfoFile, 'ExpeInfo');
+            load(expeInfoFile);
             Dir.ExpeInfo{a} = ExpeInfo;
         else
             warning('ExpeInfo.mat not found for %s', currentKey);
@@ -97,25 +96,20 @@ if strcmp(experimentName,'All')
     end
 
 elseif strcmp(experimentName, 'Sub')
-    % Assuming matlab_dict is already defined and populated
-    keyss = keys(submatlab_dict); % Extract keys from the dictionary
-    valuess = values(submatlab_dict); % Extract values from the dictionary
-
-    for i = 1:numel(keyss)
-        a = a + 1;
-        currentKey = keyss{i};
-        resultsPath = valuess{i};
+    valuess = values(subpython_dict); % Extract values from the dictionary
+    for a = 1:numel(valuess)
+        resultsPath = valuess{a};
         currentPath = fullfile(resultsPath, '..');
 
         % Assign path
-        Dir.path{a}{1} = fullfile(pathdir, currentPath);
-        Dir.results{a}{1} = fullfile(pathdir, resultsPath);
+        Dir.path{a}{1}=cd(cd(fullfile(pathdir, currentPath)));
+        Dir.results{a}{1}=fullfile(pathdir, resultsPath);
 
 
         % Load ExpeInfo
         expeInfoFile = fullfile(Dir.path{a}{1}, 'ExpeInfo.mat');
         if isfile(expeInfoFile)
-            load(expeInfoFile, 'ExpeInfo');
+            load(expeInfoFile);
             Dir.ExpeInfo{a} = ExpeInfo;
         else
             warning('ExpeInfo.mat not found for %s', currentKey);

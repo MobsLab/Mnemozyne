@@ -21,28 +21,28 @@ ECG_All = [1 3 5 6 9 10 14 15]; % Good ECG
 a=0;
 %%
 
-% -----------------------------------------------------------
-% |    MFB         |   UMazePAG      |   Reversal          |
-% -----------------------------------------------------------
-% | M1336_MFB      | M1186           | M1199_reversal      |
-% | M1117          | M1199_PAG       |                     |
-% | M1281_MFB      | M1182           |                     |
-% | M1168MFB       | M994_PAG        |                     |
-% | M1239_MFB      |                 |                     |
-% -----------------------------------------------------------
+%% Currently used mice 12/02/2025
+% -------------------------------------------------------------------------------
+% |      Known       |        MFB         |      UMazePAG       |    Reversal    |
+% -------------------------------------------------------------------------------
+% |  M1336_known    |  M1336_MFB         |  M1186              |  M1199_reversal |
+% |                 |  M1117             |  M1199_PAG          |                 |
+% |                 |  M1281_MFB         |  M1182              |                 |
+% |                 |  M1168MFB          |  M994_PAG           |                 |
+% |                 |  M1239_MFB         |                     |                 |
+% -------------------------------------------------------------------------------
+
+
+% Define experiment categories - Don't forget to update this AND the dict
+MFB_keys = {'m1336_mfb', 'm1117', 'm1281_mfb', 'm1168MFB', 'm1239v3'};
+UMazePAG_keys = {'m1186', 'm1199_pag', 'm1182', 'm994_PAG'};
+Reversal_keys = {'m1199_reversal'};
+Known_keys = {'m1336_known'};
+% Novel_keys = TODO
 
 pathdir = '/home/mickey/Documents/Theotime/DimaERC2';
 
-python_dict = dictionary(m1239vBasile= 'M1239TEST3_Basile_M1239/TEST/', m1281vBasile= 'M1281TEST3_Basile_1281MFB/TEST/', ...
-    m1199= 'M1199TEST1_Basile/TEST/', m1336= 'M1336_Known/TEST/', m1168MFB= 'DataERC2/M1168/TEST/', m905= 'DataERC2/M905/TEST/', ...
-    m1161w1199= 'DataERC2/M1161/TEST_with_1199_model/', m1161= 'DataERC2/M1161/TEST initial/', ...
-    m1124= 'DataERC2/M1124/TEST/', m1186= 'DataERC2/M1186/TEST/', m1182= 'DataERC2/M1182/TEST/', ...
-    m1168UMaze= 'DataERC1/M1168/TEST/', m1117= 'DataERC1/M1117/TEST/', ...
-    m994= 'neuroencoders_1021/_work/M994_PAG/Final_results_v3', m1336v3= 'neuroencoders_1021/_work/M1336_MFB/Final_results_v3', ...
-    m1336v2= 'neuroencoders_1021/_work/M1336_known/Final_results_v2', m1281v2= 'neuroencoders_1021/_work/M1281_MFB/Final_results_v2', ...
-    m1239v3= 'neuroencoders_1021/_work/M1239_MFB/Final_results_v3');
-
-subpython_dict = dictionary(...
+python_dict = dictionary(...
     m1336_known = 'neuroencoders_1021/_work/M1336_known/Final_results_v2/',... %%Known
     m1336_mfb = 'neuroencoders_1021/_work/M1336_MFB/Final_results_v3/',... %%MFB
     m1186= 'DataERC2/M1186/TEST/', ... %%UMazePAG
@@ -68,55 +68,51 @@ subpython_REAL = dictionary(...
     m994_PAG = '/media/nas5/ProjetERC2/Mouse-994/20191013/PagExp/_Concatenated/',...
     m1239v3= '/media/nas6/ProjetERC1/StimMFBWake/M1239/Exp2/');
 
+% Select the appropriate set of keys
+switch experimentName
+    case 'SubMFB'
+        selected_keys = MFB_keys;
+    case 'SubPAG'
+        selected_keys = UMazePAG_keys;
+    case 'SubReversal'
+        selected_keys = Reversal_keys;
+    case 'Sub'
+        selected_keys = [MFB_keys, UMazePAG_keys, Reversal_keys, Known_keys];
+    otherwise
+        warning('Not a subtype. Will choose from general MFB, UMazePAG, or Reversal (no ann).');
+end
 
 Dir.path = {}; % Initialize a cell array for paths
 Dir.ExpeInfo = {}; % Initialize a cell array for ExpeInfo
 a = 0; % Initialize counter
 
+if strfind(experimentName, 'Sub')
+    keys = python_dict.keys;
+    values = python_dict.values; % Extract values from the dictionary
+    idx = 1;
+    for a = 1:numel(values)
+        if ismember(keys{a}, selected_keys)
+            resultsPath = values{a};
+            currentPath = fullfile(resultsPath, '..');
 
-if strcmp(experimentName,'All')
-    valuess = values(python_dict);
-    for a = 1:numel(valuess)
-        resultsPath = valuess{a};
-        currentPath = fullfile(resultsPath, '..');
-
-        % Assign path
-        Dir.path{a}{1}=cd(cd(fullfile(pathdir, currentPath)));
-        Dir.results{a}{1}=fullfile(pathdir, resultsPath);
+            % Assign path
+            Dir.path{idx}{1}=cd(cd(fullfile(pathdir, currentPath)));
+            Dir.results{idx}{1}=fullfile(pathdir, resultsPath);
 
 
-        % Load ExpeInfo
-        expeInfoFile = fullfile(Dir.path{a}{1}, 'ExpeInfo.mat');
-        if isfile(expeInfoFile)
-            load(expeInfoFile);
-            Dir.ExpeInfo{a} = ExpeInfo;
-        else
-            warning('ExpeInfo.mat not found for %s', currentKey);
+            % Load ExpeInfo
+            expeInfoFile = fullfile(Dir.path{idx}{1}, 'ExpeInfo.mat');
+            if isfile(expeInfoFile)
+                load(expeInfoFile);
+                Dir.ExpeInfo{idx} = ExpeInfo;
+            else
+                warning('ExpeInfo.mat not found for %s', currentKey);
+            end
+            idx = idx + 1;
         end
     end
 
-elseif strcmp(experimentName, 'Sub')
-    valuess = values(subpython_dict); % Extract values from the dictionary
-    for a = 1:numel(valuess)
-        resultsPath = valuess{a};
-        currentPath = fullfile(resultsPath, '..');
-
-        % Assign path
-        Dir.path{a}{1}=cd(cd(fullfile(pathdir, currentPath)));
-        Dir.results{a}{1}=fullfile(pathdir, resultsPath);
-
-
-        % Load ExpeInfo
-        expeInfoFile = fullfile(Dir.path{a}{1}, 'ExpeInfo.mat');
-        if isfile(expeInfoFile)
-            load(expeInfoFile);
-            Dir.ExpeInfo{a} = ExpeInfo;
-        else
-            warning('ExpeInfo.mat not found for %s', currentKey);
-        end
-    end
-
-elseif strcmp(experimentName,'UMazePAG')
+elseif strcmp(lower(experimentName),lower('UMazePAG'))
 
     % Mouse711
     a=a+1;Dir.path{a}{1}='/media/DataMOBsRAIDN/ProjetERC2/Mouse-711/17032018/_Concatenated/';
@@ -225,7 +221,7 @@ elseif strcmp(experimentName,'UMazePAG')
     a=a+1;Dir.path{a}{1}='/media/nas7/ProjetERC2/Mouse-K239/2021110/_Concatenated/';
     load([Dir.path{a}{1},'ExpeInfo.mat']),Dir.ExpeInfo{a}=ExpeInfo;
 
-elseif strcmp(experimentName,'StimMFBWake')
+elseif strcmp(lower(experimentName),lower('StimMFBWake'))
 
     % Mouse882
     a=a+1;Dir.path{a}{1}='/media/nas5/ProjetERC1/StimMFBWake/M0882/';
@@ -310,7 +306,7 @@ elseif strcmp(experimentName,'StimMFBWake')
     load([Dir.path{a}{1},'ExpeInfo.mat']),Dir.ExpeInfo{a}=ExpeInfo;
 
 
-elseif strcmp(experimentName,'Reversal')
+elseif strcmp(lower(experimentName),('Reversal'))
 
     % Mouse994
     a=a+1;Dir.path{a}{1}='/media/nas5/ProjetERC3/M994/Reversal/';
@@ -324,13 +320,13 @@ elseif strcmp(experimentName,'Reversal')
     a=a+1;Dir.path{a}{1}='/media/nas6/ProjetERC3/M1199/Reversal/';
     load([Dir.path{a}{1},'ExpeInfo.mat']),Dir.ExpeInfo{a}=ExpeInfo;
 
-elseif strcmp(experimentName,'UMazePAGPCdriven')
+elseif strcmp(lower(experimentName),lower('UMazePAGPCdriven'))
 
     % Mouse 1115
     a=a+1;Dir.path{a}{1}='/media/nas5/ProjetERC2/Mouse-K115/20201006/_Concatenated/';
     load([Dir.path{a}{1},'ExpeInfo.mat']),Dir.ExpeInfo{a}=ExpeInfo;
 
-elseif strcmp(experimentName,'Novel')
+elseif strcmp(lower(experimentName),lower('Novel'))
 
     %%%% Only hab - 6 mice
 
@@ -448,7 +444,7 @@ elseif strcmp(experimentName,'Novel')
 
 
 
-elseif strcmp(experimentName,'BaselineSleep')
+elseif strcmp(lower(experimentName),lower('BaselineSleep'))
 
     % Mouse 1162 - 1
     a=a+1;
@@ -481,7 +477,7 @@ elseif strcmp(experimentName,'BaselineSleep')
     a=a+1;Dir.path{a}{1}='/media/nas6/ProjetERC1/BaselineSleep/M1230/';
     load([Dir.path{a}{1},'ExpeInfo.mat']),Dir.ExpeInfo{a}=ExpeInfo;
 
-elseif strcmp(experimentName,'Known')
+elseif strcmp(lower(experimentName),lower('Known'))
     % Mouse 1230
     a=a+1;
     Dir.path{a}{1}='/media/nas6/ProjetERC1/Known/M1230/';

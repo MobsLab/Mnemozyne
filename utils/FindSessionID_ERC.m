@@ -19,7 +19,7 @@ function ids = FindSessionID_ERC(behavResources, SessionName)
 ids = zeros(1,length(behavResources));
 
 for k=1:length(behavResources)
-    if ~isempty(strfind(behavResources(k).SessionName, SessionName))
+    if ~isempty(strfind(lower(behavResources(k).SessionName), lower(SessionName)))
         ids(k) = 1;
     end
 end

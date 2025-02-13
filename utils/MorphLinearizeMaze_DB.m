@@ -24,6 +24,7 @@ function MorphLinearizeMaze_DB(nMice, varargin)
 SessionNames = {'Hab', 'TestPreFakeStim', 'TestPre', 'Cond', 'CondPCDriven', 'TestPost', 'ExploAfter'};
 % SessionNames = {'TestPost', 'ExploAfter'};
 % SessionNames = {'ExploAfter'};
+% SessionNames = {'PreSleep', 'Hab', 'TestPre', 'Cond', 'TestPost', 'Extinct'}
 
 %% Default values of optional arguments
 redo = false;

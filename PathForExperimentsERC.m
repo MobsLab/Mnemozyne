@@ -40,7 +40,8 @@ Reversal_keys = {'m1199_reversal'};
 Known_keys = {'m1336_known'};
 % Novel_keys = TODO
 
-pathdir = '/home/mickey/Documents/Theotime/DimaERC2';
+% pathdir = '/home/mickey/Documents/Theotime/DimaERC2';
+pathdir = '/media/mickey/DataTheotime210/DimaERC2'
 
 python_dict = dictionary(...
     m1336_known = 'neuroencoders_1021/_work/M1336_known/Final_results_v2/',... %%Known
@@ -54,6 +55,7 @@ python_dict = dictionary(...
     m1182= 'DataERC2/M1182/TEST/', ... %PAG
     m994_PAG = 'neuroencoders_1021/_work/M994_PAG/Final_results_v3/',... %%PAG
     m1239v3= 'neuroencoders_1021/_work/M1239_MFB/Final_results_v3/'); %%MFB
+%%% ACHTUNG: M1239 has no clean data (only NaN).
 
 subpython_REAL = dictionary(...
     m1336_known = '/media/nas7/ProjetERC1/Known/M1336/',...
@@ -67,6 +69,7 @@ subpython_REAL = dictionary(...
     m1182= '/media/nas6/ProjetERC2/Mouse-K182/20200301/_Concatenated/', ...
     m994_PAG = '/media/nas5/ProjetERC2/Mouse-994/20191013/PagExp/_Concatenated/',...
     m1239v3= '/media/nas6/ProjetERC1/StimMFBWake/M1239/Exp2/');
+%%% ACHTUNG: M1239 has no clean data (only NaN).
 
 % Select the appropriate set of keys
 switch experimentName

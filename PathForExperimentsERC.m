@@ -26,6 +26,7 @@ a=0;
 % |      Known       |        MFB         |      UMazePAG       |    Reversal    |
 % -------------------------------------------------------------------------------
 % |  M1336_known    |  M1336_MFB         |  M1186              |  M1199_reversal |
+% |                 |  M1336_known         |                     |                 |
 % |                 |  M1117             |  M1199_PAG          |                 |
 % |                 |  M1281_MFB         |  M1182              |                 |
 % |                 |  M1168MFB          |  M994_PAG           |                 |
@@ -46,11 +47,11 @@ pathdir = '/media/mickey/DataTheotime210/DimaERC2'
 
 % Define the first dictionary
 python_dict = containers.Map({...
-    'm1336_known', 'm1336_mfb', 'm1186', 'm1199_pag', 'm1199_reversal', ...
+    'm1336_mfb', 'm1336_known', 'm1186', 'm1199_pag', 'm1199_reversal', ...
     'm1117', 'm1281_mfb', 'm1168MFB', 'm1182', 'm994_PAG', 'm1239v3'}, ...
     {...
-    'neuroencoders_1021/_work/M1336_known/Final_results_v2/', ... % Known
     'neuroencoders_1021/_work/M1336_MFB/Final_results_v3/', ... % MFB
+    'neuroencoders_1021/_work/M1336_known/Final_results_v2/', ... % Known
     'DataERC2/M1186/TEST/', ... % U-Maze PAG
     'neuroencoders_1021/_work/M1199_PAG/Final_results_v3/', ... % U-Maze PAG
     'neuroencoders_1021/_work/M1199_reversal/Final_results_v3/', ... % Reversal
@@ -66,11 +67,11 @@ python_dict = containers.Map({...
 
 % Define the second dictionary
 subpython_REAL = containers.Map({...
-    'm1336_known', 'm1336_mfb', 'm1186', 'm1199_pag', 'm1199_reversal', ...
+    'm1336_mfb', 'm1336_known', 'm1186', 'm1199_pag', 'm1199_reversal', ...
     'm1117', 'm1281_mfb', 'm1168UMFB', 'm1182', 'm994_PAG', 'm1239v3'}, ...
     {...
-    '/media/nas7/ProjetERC1/Known/M1336/', ...
     '/media/nas7/ProjetERC1/StimMFBWake/M1336/', ...
+    '/media/nas7/ProjetERC1/Known/M1336/', ...
     '/media/nas6/ProjetERC2/Mouse-K186/20210409/_Concatenated/', ...
     '/media/nas6/ProjetERC2/Mouse-K199/20210408/_Concatenated/', ...
     '/media/nas6/ProjetERC3/M1199/Reversal/', ...
@@ -522,6 +523,13 @@ end
 %% Get mice names
 for i=1:length(Dir.path)
     Dir.manipe{i}=experimentName;
+    if contains(lower(experimentName),'sub')
+        if contains(Dir.ExpeInfo{i}.SessionType, 'UMaze')
+            Dir.manipe{i} = 'SubUMazePAG';
+        else
+            Dir.manipe{i}=strcat('Sub', Dir.ExpeInfo{i}.SessionType);
+        end
+    end
     temp=strfind(Dir.path{i}{1},'Mouse-');
     if isempty(temp)
         temp=strfind(Dir.path{i}{1},'/M');
@@ -548,7 +556,6 @@ end
 %% Get mice groups
 
 for i=1:length(Dir.path)
-    Dir.manipe{i}=experimentName;
     if strcmp(Dir.manipe{i},'UMazePAG')
         % Allocate
         Dir.group{1} = cell(length(Dir.path),1);

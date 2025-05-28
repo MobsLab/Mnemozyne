@@ -21,24 +21,26 @@ ECG_All = [1 3 5 6 9 10 14 15]; % Good ECG
 a=0;
 %%
 
-%% Currently used mice 12/02/2025
-% -------------------------------------------------------------------------------
-% |      Known       |        MFB         |      UMazePAG       |    Reversal    |
-% -------------------------------------------------------------------------------
-% |  M1336_known    |  M1336_MFB         |  M1186              |  M1199_reversal |
-% |                 |  M1336_known         |                     |                 |
-% |                 |  M1117             |  M1199_PAG          |                 |
-% |                 |  M1281_MFB         |  M1182              |                 |
-% |                 |  M1168MFB          |  M994_PAG           |                 |
-% |                 |  M1239_MFB         |                     |                 |
-% -------------------------------------------------------------------------------
+%% Currently used mice 28/05/2025
+% -----------------------------------------------------------------------------------------------
+% |      Known       |        MFB         |        UMazePAG        |    Reversal     |   Novel   |
+% -----------------------------------------------------------------------------------------------
+% |  M1336_known     |  M1336_MFB         |  M1186                 |  M1199_reversal | M1230_Novel |
+% |  M1230_Known     |  M1117             |  M1199_PAG             |                 |             |
+% |                  |  M1281_MFB         |  M1182                 |                 |             |
+% |                  |  M1168MFB          |  M994_PAG              |                 |             |
+% |                  |  M1239MFB          |  M1239_PAG             |                 |             |
+% |                  |  M1162_MFB         |  M1162_PAG             |                 |             |
+% |                  |  M1199_MFB         |                        |                 |             |
+% -----------------------------------------------------------------------------------------------
 
 
 % Define experiment categories - Don't forget to update this AND the dict
-MFB_keys = {'m1336_mfb', 'm1117', 'm1281_mfb', 'm1168MFB', 'm1239v3'};
-UMazePAG_keys = {'m1186', 'm1199_pag', 'm1182', 'm994_PAG'};
+MFB_keys = {'m1336_mfb', 'm1117', 'm1281_mfb', 'm1168MFB', 'm1239_MFB','m1162_mfb','m1199_mfb'};
+UMazePAG_keys = {'m1186', 'm1199_pag', 'm1182', 'm994_PAG', 'm1239_PAG', 'm1162_PAG'};
 Reversal_keys = {'m1199_reversal'};
-Known_keys = {'m1336_known'};
+Known_keys = {'m1336_known',  'm1230_Known'};
+Novel_keys = {'m1230_Novel'}
 % Novel_keys = TODO
 
 % pathdir = '/home/mickey/Documents/Theotime/DimaERC2';
@@ -48,19 +50,25 @@ pathdir = '/media/mickey/DataTheotime210/DimaERC2'
 % Define the first dictionary
 python_dict = containers.Map({...
     'm1336_mfb', 'm1336_known', 'm1186', 'm1199_pag', 'm1199_reversal', ...
-    'm1117', 'm1281_mfb', 'm1168MFB', 'm1182', 'm994_PAG', 'm1239v3'}, ...
+    'm1117', 'm1281_mfb', 'm1168MFB', 'm1182', 'm994_PAG', 'm1239_MFB', ...
+    'm1199_mfb', 'm1239_PAG', 'm1162_PAG', 'm1230_Known', 'm1230_Novel'}, ...
     {...
     'neuroencoders_1021/_work/M1336_MFB/Final_results_v3/', ... % MFB
     'neuroencoders_1021/_work/M1336_known/Final_results_v2/', ... % Known
-    'DataERC2/M1186/TEST/', ... % U-Maze PAG
+    'neuroencoders_1021/_work/M1186/Final_results_v2/', ... % U-Maze PAG
     'neuroencoders_1021/_work/M1199_PAG/Final_results_v3/', ... % U-Maze PAG
     'neuroencoders_1021/_work/M1199_reversal/Final_results_v3/', ... % Reversal
-    'DataERC1/M1117/TEST/', ... % MFB
+    'neuroencoders_1021/_work/M1117_MFB/Final_results/', ... % MFB
     'neuroencoders_1021/_work/M1281_MFB/Final_results_v2/', ... % MFB
-    'DataERC1/M1168/TEST/', ... % MFB
-    'DataERC2/M1182/TEST/', ... % PAG
+    'neuroencoders_1021/_work/M1168_MFB/test', ... % MFB
+    'neuroencoders_1021/_work/M1182_PAG/test/', ... % PAG
     'neuroencoders_1021/_work/M994_PAG/Final_results_v3/', ... % PAG
-    'neuroencoders_1021/_work/M1239_MFB/Final_results_v3/' ... % MFB
+    'neuroencoders_1021/_work/M1239_MFB/Final_results_v3/', ... % MFB
+    'neuroencoders_1021/_work/M1199_MFB/test/', ... % MFB
+    'neuroencoders_1021/_work/M1239_PAG/test/', ... % PAG
+    'neuroencoders_1021/_work/M1162_PAG/test/', ... % PAG
+    'neuroencoders_1021/_work/M1230_Known/test/', ... % Known
+    'neuroencoders_1021/_work/M1230_Novel/test/', ... % Novel
     });
 %%% ACHTUNG: M1239 has no clean data (only NaN).
 
@@ -68,7 +76,8 @@ python_dict = containers.Map({...
 % Define the second dictionary
 subpython_REAL = containers.Map({...
     'm1336_mfb', 'm1336_known', 'm1186', 'm1199_pag', 'm1199_reversal', ...
-    'm1117', 'm1281_mfb', 'm1168UMFB', 'm1182', 'm994_PAG', 'm1239v3'}, ...
+    'm1117', 'm1281_mfb', 'm1168UMFB', 'm1182', 'm994_PAG', 'm1239_MFB', ...
+    'm1199_mfb', 'm1239_PAG', 'm1162_PAG', 'm1230_Known', 'm1230_Novel'}, ...
     {...
     '/media/nas7/ProjetERC1/StimMFBWake/M1336/', ...
     '/media/nas7/ProjetERC1/Known/M1336/', ...
@@ -80,7 +89,13 @@ subpython_REAL = containers.Map({...
     '/media/nas5/ProjetERC1/StimMFBWake/M1168/', ...
     '/media/nas6/ProjetERC2/Mouse-K182/20200301/_Concatenated/', ...
     '/media/nas5/ProjetERC2/Mouse-994/20191013/PagExp/_Concatenated/', ...
-    '/media/nas6/ProjetERC1/StimMFBWake/M1239/Exp2/'
+    '/media/nas6/ProjetERC1/StimMFBWake/M1239/Exp2/', ...
+    '/media/nas5/ProjetERC1/StimMFBWake/M1162/', ...
+    '/media/nas6/ProjetERC1/StimMFBWake/M1199/exp1/', ...
+    '/media/nas7/ProjetERC2/Mouse-K239/2021110/_Concatenated/', ...
+    '/media/nas5/ProjetERC2/Mouse-K162/20210121/_Concatenated/', ...
+    '/media/nas6/ProjetERC1/Known/M1230/', ...
+    '/media/nas6/ProjetERC1/Novel/M1230/', ...
     });
 %%% ACHTUNG: M1239 has no clean data (only NaN).
 
@@ -88,11 +103,27 @@ subpython_REAL = containers.Map({...
 switch experimentName
     case 'SubMFB'
         selected_keys = MFB_keys;
+    case 'SubMFBReal'
+        selected_keys = MFB_keys;
     case 'SubPAG'
+        selected_keys = UMazePAG_keys;
+    case 'SubPAGReal'
         selected_keys = UMazePAG_keys;
     case 'SubReversal'
         selected_keys = Reversal_keys;
+    case 'SubReversalReal'
+        selected_keys = Reversal_keys;
+    case 'SubKnown'
+        selected_keys = Known_keys;
+    case 'SubKnownReal'
+        selected_keys = Known_keys;
+    case 'SubNovel'
+        selected_keys = Novel_keys;
+    case 'SubNovelReal'
+        selected_keys = Novel_keys;
     case 'Sub'
+        selected_keys = [MFB_keys, UMazePAG_keys, Reversal_keys, Known_keys];
+    case 'SubReal'
         selected_keys = [MFB_keys, UMazePAG_keys, Reversal_keys, Known_keys];
     otherwise
         warning('Not a subtype. Will choose from general MFB, UMazePAG, or Reversal (no ann).');
@@ -102,19 +133,27 @@ Dir.path = {}; % Initialize a cell array for paths
 Dir.ExpeInfo = {}; % Initialize a cell array for ExpeInfo
 a = 0; % Initialize counter
 
-if strfind(experimentName, 'Sub')
+if contains(experimentName, 'Sub')
     keys = python_dict.keys;
     values = python_dict.values; % Extract values from the dictionary
     idx = 1;
+    if contains(experimentName, 'Real')
+        keys = subpython_REAL.keys;
+        values = subpython_REAL.values;
+    end
     for a = 1:numel(values)
         if ismember(keys{a}, selected_keys)
             resultsPath = values{a};
-            currentPath = fullfile(resultsPath, '..');
-
             % Assign path
-            Dir.path{idx}{1}=cd(cd(fullfile(pathdir, currentPath)));
-            Dir.results{idx}{1}=fullfile(pathdir, resultsPath);
-
+            try
+                currentPath = fullfile(resultsPath, '..');
+                Dir.path{idx}{1}=cd(cd(fullfile(pathdir, currentPath)));
+                Dir.results{idx}{1}=fullfile(pathdir, resultsPath);
+            catch
+                currentPath = fullfile(resultsPath);
+                Dir.path{idx}{1}=cd(cd(fullfile(currentPath)));
+                Dir.results{idx}{1}=fullfile(resultsPath);
+            end
 
             % Load ExpeInfo
             expeInfoFile = fullfile(Dir.path{idx}{1}, 'ExpeInfo.mat');
@@ -322,7 +361,7 @@ elseif strcmp(lower(experimentName),lower('StimMFBWake'))
     load([Dir.path{a}{1},'ExpeInfo.mat']),Dir.ExpeInfo{a}=ExpeInfo;
 
 
-elseif strcmp(lower(experimentName),('Reversal'))
+elseif strcmp(lower(experimentName),lower('Reversal'))
 
     % Mouse994
     a=a+1;Dir.path{a}{1}='/media/nas5/ProjetERC3/M994/Reversal/';

@@ -41,7 +41,6 @@ UMazePAG_keys = {'m1186', 'm1199_pag', 'm1182', 'm994_PAG', 'm1239_PAG', 'm1162_
 Reversal_keys = {'m1199_reversal'};
 Known_keys = {'m1336_known',  'm1230_Known'};
 Novel_keys = {'m1230_Novel'}
-% Novel_keys = TODO
 
 % pathdir = '/home/mickey/Documents/Theotime/DimaERC2';
 pathdir = '/media/mickey/DataTheotime210/DimaERC2'
@@ -51,24 +50,25 @@ pathdir = '/media/mickey/DataTheotime210/DimaERC2'
 python_dict = containers.Map({...
     'm1336_mfb', 'm1336_known', 'm1186', 'm1199_pag', 'm1199_reversal', ...
     'm1117', 'm1281_mfb', 'm1168MFB', 'm1182', 'm994_PAG', 'm1239_MFB', ...
-    'm1199_mfb', 'm1239_PAG', 'm1162_PAG', 'm1230_Known', 'm1230_Novel'}, ...
+    'm1162_mfb','m1199_mfb', 'm1239_PAG', 'm1162_PAG', 'm1230_Known', 'm1230_Novel'}, ...
     {...
-    'neuroencoders_1021/_work/M1336_MFB/Final_results_v3/', ... % MFB
-    'neuroencoders_1021/_work/M1336_known/Final_results_v2/', ... % Known
-    'neuroencoders_1021/_work/M1186/Final_results_v2/', ... % U-Maze PAG
+    'neuroencoders_1021/_work/M1336_MFB/pos_transformer/', ... % MFB
+    'neuroencoders_1021/_work/M1336_known/pos_transformer/', ... % Known
+    'neuroencoders_1021/_work/M1186_MFB/pos_transformer/', ... % U-Maze PAG
     'neuroencoders_1021/_work/M1199_PAG/Final_results_v3/', ... % U-Maze PAG
     'neuroencoders_1021/_work/M1199_reversal/Final_results_v3/', ... % Reversal
-    'neuroencoders_1021/_work/M1117_MFB/Final_results/', ... % MFB
+    'neuroencoders_1021/_work/M1117_MFB/pos_transformer/', ... % MFB
     'neuroencoders_1021/_work/M1281_MFB/Final_results_v2/', ... % MFB
-    'neuroencoders_1021/_work/M1168_MFB/test', ... % MFB
-    'neuroencoders_1021/_work/M1182_PAG/test/', ... % PAG
+    'neuroencoders_1021/_work/M1168_MFB/pos_transformer', ... % MFB
+    'neuroencoders_1021/_work/M1182_PAG/pos_transformer/', ... % PAG
     'neuroencoders_1021/_work/M994_PAG/Final_results_v3/', ... % PAG
     'neuroencoders_1021/_work/M1239_MFB/Final_results_v3/', ... % MFB
-    'neuroencoders_1021/_work/M1199_MFB/test/', ... % MFB
-    'neuroencoders_1021/_work/M1239_PAG/test/', ... % PAG
-    'neuroencoders_1021/_work/M1162_PAG/test/', ... % PAG
-    'neuroencoders_1021/_work/M1230_Known/test/', ... % Known
-    'neuroencoders_1021/_work/M1230_Novel/test/', ... % Novel
+    'neuroencoders_1021/_work/M1162_MFB/pos_transformer/', ... % MFB
+    'neuroencoders_1021/_work/M1199_MFB/exp1/pos_transformer/', ... % MFB
+    'neuroencoders_1021/_work/M1239_PAG/pos_transformer/', ... % PAG
+    'neuroencoders_1021/_work/M1162_PAG/pos_transformer/', ... % PAG
+    'neuroencoders_1021/_work/M1230_Known/pos_transformer/', ... % Known
+    'neuroencoders_1021/_work/M1230_Novel/pos_transformer/', ... % Novel
     });
 %%% ACHTUNG: M1239 has no clean data (only NaN).
 
@@ -77,7 +77,7 @@ python_dict = containers.Map({...
 subpython_REAL = containers.Map({...
     'm1336_mfb', 'm1336_known', 'm1186', 'm1199_pag', 'm1199_reversal', ...
     'm1117', 'm1281_mfb', 'm1168MFB', 'm1182', 'm994_PAG', 'm1239_MFB', ...
-    'm1199_mfb', 'm1239_PAG', 'm1162_PAG', 'm1230_Known', 'm1230_Novel'}, ...
+    'm1162_mfb', 'm1199_mfb', 'm1239_PAG', 'm1162_PAG', 'm1230_Known', 'm1230_Novel'}, ...
     {...
     '/media/nas7/ProjetERC1/StimMFBWake/M1336/', ...
     '/media/nas7/ProjetERC1/Known/M1336/', ...
@@ -122,9 +122,9 @@ switch experimentName
     case 'SubNovelReal'
         selected_keys = Novel_keys;
     case 'Sub'
-        selected_keys = [MFB_keys, UMazePAG_keys, Reversal_keys, Known_keys];
+        selected_keys = [MFB_keys, UMazePAG_keys, Reversal_keys, Known_keys, Novel_keys];
     case 'SubReal'
-        selected_keys = [MFB_keys, UMazePAG_keys, Reversal_keys, Known_keys];
+        selected_keys = [MFB_keys, UMazePAG_keys, Reversal_keys, Known_keys, Novel_keys];
     otherwise
         warning('Not a subtype. Will choose from general MFB, UMazePAG, or Reversal (no ann).');
 end

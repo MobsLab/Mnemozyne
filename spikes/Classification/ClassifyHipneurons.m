@@ -7,7 +7,7 @@ function ClassifyHipneurons(mice)
 %
 %     mice                number of mice from UMazePAG ERC experiment to
 %                         take the neurons from
-% 
+%
 %  OUTPUT
 %
 %     ~                   the file is saved into /PrgMatlab/WaveFormLibraryHip.mat
@@ -21,9 +21,9 @@ function ClassifyHipneurons(mice)
 SpikeParameters = CreateLib_WFParam(mice, 2e4);
 
 %% Do Clustering
-rmpath([dropbox filesep '/Kteam/PrgMatlab/Fra/UtilsStats']);
+rmpath(fullfile(GitHubLocation, 'Fra/UtilsStats/'));
 NeuronClassif=kmeans(SpikeParameters(:,1:3),2);
-addpath([dropbox filesep '/Kteam/PrgMatlab/Fra/UtilsStats']);
+addpath(fullfile(GitHubLocation, 'Fra/UtilsStats/'));
 % Identify the PN cell group as the most numerous one
 NumofOnes = sum(NeuronClassif == 1)/length(NeuronClassif);
 if NumofOnes>0.5

@@ -1,4 +1,4 @@
-function [UnitID,AllParamsNew,WFInfo,BestElec,figid] = ClassifyHippocampalWaveforms(W, S, LFP, DropBoxLocation,PlotOrNot, varargin)
+function [UnitID,AllParamsNew,WFInfo,BestElec,figid] = ClassifyHippocampalWaveforms(W, S, LFP, CodeLibraryLocation,PlotOrNot, varargin)
 %
 % Creates an array of spikes' waveforms and their paramteres to classify
 % them later in pyramidal cells and interneurons
@@ -15,7 +15,7 @@ function [UnitID,AllParamsNew,WFInfo,BestElec,figid] = ClassifyHippocampalWavefo
 %                         classification
 %     addlib              boolean whether to add newly classified
 %                         waverforms to the library
-% 
+%
 %  OUTPUT
 %
 %     UnitID              N * 2 matrix where N is number of newly classified neurons,
@@ -92,7 +92,7 @@ end
 NewWF=NewWF';
 
 % Load the  library of waveforms
-load(fullfile(DropBoxLocation,'PrgMatlab', 'WaveFormLibraryHip.mat'))
+load(fullfile(CodeLibraryLocation, 'WaveFormLibraryHip.mat'))
 LibraryWF = (AllParams(:,end-31:end)');
 
 % Concatenate new and all WF
@@ -106,25 +106,25 @@ AllFR = [AllParams(:,2); FR];
 
 %% DEFINE WAVEFORM PARAMETERS
 for k = 1:size(AllWF,2)
-    
+
     if not(sum(isnan(AllWF(:,k))) == length(AllWF(:,k)))
         % resample to higher frequency
         WaveToUseResample(k,:) = resample(AllWF(:,k),resample_factor,1);
-        
+
         % normalize amplitude
         WaveToUseResample(k,:) = WaveToUseResample(k,:)./(max(WaveToUseResample(k,:))-min(WaveToUseResample(k,:)));
-        
+
         % Trough To Peak
         [valMin,indMin] = min(WaveToUseResample(k,:)); % find trough
         [~,indPeak] = max(WaveToUseResample(k,indMin:end)); % find next peak
         WFInfo.TroughToPeakTime(k) = indPeak*5e-5/resample_factor;
-        
+
         % Half amplitude duration
         HalfAmp = valMin/2;
         TimeAtHlafAmp(1) = find(WaveToUseResample(k,:)<HalfAmp,1,'first');
         TimeAtHlafAmp(2) = find(WaveToUseResample(k,:)<HalfAmp,1,'last');
         WFInfo.HalfAmpDur(k) = (TimeAtHlafAmp(2)-TimeAtHlafAmp(1))*5e-5/resample_factor;
-        
+
         % Half width
         DD = diff(WaveToUseResample(k,:));
         diffpeak = find(DD(indMin:end) == max(DD(indMin:end)))+indMin;
@@ -138,13 +138,13 @@ for k = 1:size(AllWF,2)
                 IndMax = find(WaveToUseResample(k,IndMax:end)>0,1,'first')+IndMax ;
             end
         end
-        
+
         if not(isempty(IndMax)) && not(isempty(IndMax))
             WFInfo.HalfWidth(k) = ((IndMax-indMin)*5e-5)/resample_factor;
         else
             WFInfo.HalfWidth(k) = NaN;
         end
-        
+
         % Area under curve
         WaveToUseResampleTemp = WaveToUseResample(k,indMin:end);
         valzero = find(WaveToUseResampleTemp>0,1,'first');
@@ -155,12 +155,12 @@ for k = 1:size(AllWF,2)
         else
             WFInfo.AreaUnderCurveNorm(k) = 0;
         end
-        
+
         % Assymetry
         MaxBef = max(WaveToUseResample(k,1:indMin));
         MaxAft = max(WaveToUseResample(k,indMin:end));
         WFInfo.Assymetry(k) = (MaxAft-MaxBef)./(MaxAft+MaxBef);
-        
+
         % is this for a new (0) or a library neuron (1)
         WFInfo.OldOrNew(k)=(k<=size(LibraryWF,2));
     else
@@ -177,11 +177,11 @@ end
 
 %% CLASSIFICATION OF UNITS
 % Cluster
-rmpath(fullfile(DropBoxLocation,'PrgMatlab/Fra/UtilsStats'));
+rmpath(fullfile(CodeLibraryLocation,'Fra/UtilsStats'));
 Params = [AllFR (WFInfo.HalfAmpDur/range(WFInfo.HalfAmpDur))' ...
     WFInfo.Assymetry' (WFInfo.TroughToPeakTime/range(WFInfo.TroughToPeakTime))'];
 NeuronClassif = kmeans(Params,2);
-addpath(fullfile(DropBoxLocation,'PrgMatlab/Fra/UtilsStats'));
+addpath(fullfile(CodeLibraryLocation,'Fra/UtilsStats'));
 
 % 1 is Pyr, -1 is Int
 NumofOnes = sum(NeuronClassif == 1)/length(NeuronClassif);
@@ -242,14 +242,14 @@ end
 %% PLOT FIGURE
 if PlotOrNot
     figid=figure;
-    
+
     subplot(2,3,[1,2])
     %plot old units
     plot3(AllParamsOld(UnitIDOld == -1,3),AllParamsOld(UnitIDOld == -1,2),AllParamsOld(UnitIDOld == -1,1),'r.','MarkerSize',5)
     hold on,plot3(AllParamsOld(UnitIDOld == 1,3),AllParamsOld(UnitIDOld == 1,2),AllParamsOld(UnitIDOld == 1,1),'b.','MarkerSize',5)
     plot3(AllParamsOld(UnitIDOld == -0.5,3),AllParamsOld(UnitIDOld == -0.5,2),AllParamsOld(UnitIDOld == -0.5,1),'m.','MarkerSize',5)
     plot3(AllParamsOld(UnitIDOld == 0.5,3),AllParamsOld(UnitIDOld == 0.5,2),AllParamsOld(UnitIDOld == 0.5,1),'c.','MarkerSize',5)
-    
+
     % plot new units
     plot3(AllParamsNew(UnitIDNew == -1,3),AllParamsNew(UnitIDNew == -1,2),AllParamsNew(UnitIDNew == -1,1),'ro','MarkerSize',5)
     hold on,plot3(AllParamsNew(UnitIDNew == 1,3),AllParamsNew(UnitIDNew == 1,2),AllParamsNew(UnitIDNew == 1,1),'bo','MarkerSize',5)
@@ -259,7 +259,7 @@ if PlotOrNot
     zlabel('Firing rate (Hz)');
     ylabel('Time between halfAmp');
     xlabel('Asymetry');
-    
+
     subplot(2,3,4)
     hist(UnitIDOld(UnitIDOld(:,1)>0,2),50,'k'),
     h  =  findobj(gca,'Type','patch');
@@ -268,8 +268,8 @@ if PlotOrNot
     plot(UnitIDNew(UnitIDNew(:,1)>0,2),UnitIDNew(UnitIDNew(:,1)>0,2)*0+max(get(gca,'ylim'))/2,'k*')
     xlabel('black bar  =  mean + 2SD')
     ylabel('Dist To Mean Pyr')
-    
-    
+
+
     subplot(2,3,5)
     hist(UnitIDOld(UnitIDOld(:,1)<0,2),50,'k'),
     h  =  findobj(gca,'Type','patch');
@@ -277,7 +277,7 @@ if PlotOrNot
     hold on, line([LimInt LimInt],get(gca,'ylim'),'color','k','linewidth',3)
     plot(UnitIDNew(UnitIDNew(:,1)<0,2),UnitIDNew(UnitIDNew(:,1)<0,2)*0+max(get(gca,'ylim'))/2,'k*')
     ylabel('Dist To Mean Int')
-    
+
     subplot(2,3,[3])
     plot(DatOld(:,UnitIDOld(:,1) == 1),'b'),
     hold on
@@ -286,7 +286,7 @@ if PlotOrNot
         plot(DatNew(:,UnitIDNew(:,1) == 0.5),'k'),
     end
     xlabel('blue: old   cyan: new   black: ambig')
-    
+
     subplot(2,3,[6])
     plot(DatOld(:,UnitIDOld(:,1) == -1),'r'),
     hold on

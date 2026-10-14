@@ -8,7 +8,7 @@
 %
 %    [MatInfoNeurons, BasicNeuronInfo] = CalcBasicNeuronInfo(Dir, ploto)
 %
-%    Dir       Directoty to find files
+%    Dir       Directory/str path to find spike files
 %    ploto     if 1 will plot the properties and save the figure; 0 - not
 %
 %  OUTPUT
@@ -108,13 +108,13 @@ end
 if exist('channel_ob','var')
     LFP_ob = load(['LFPData/LFP' num2str(channel_ob) '.mat']);
     FilLFP_ob =FilterLFP(LFP_ob.LFP,[3 6],1024);
-    
-    
+
+
     zr4Hz = hilbert(Data(FilLFP_ob));
     power=abs(zr4Hz);
     powerTsd=tsd(Range(FilLFP_ob),power);
     FourHz=percentile(power,75);
-    
+
     FourHzEpoch = thresholdIntervals(Restrict(powerTsd,Wake), FourHz);
 end
 
@@ -137,7 +137,7 @@ idx_SUA(idx_SUA==0) = [];
 % Calculate overall firing rate and during different states
 for j=1:length(S)
     firingrates(j) = length(Range(S{j}))/(time(end)-time(1))*1e4;
-    
+
     FRWake(j) = length(Range(Restrict(S{j},Wake)))/sum((End(Wake)-Start(Wake)))*1e4;
     FR_SWS(j) = length(Range(Restrict(S{j},SWSEpoch)))/sum((End(SWSEpoch)-Start(SWSEpoch)))*1e4;
     FR_REM(j) = length(Range(Restrict(S{j},REMEpoch)))/sum((End(REMEpoch)-Start(REMEpoch)))*1e4;
@@ -148,7 +148,7 @@ for j=1:length(S)
 end
 % Classify neurons in INT and PYR
 if exist('NeuronClassification.mat')~=2
-    [UnitID,~,~,~,figid] = ClassifyHippocampalWaveforms(W, S, LFP_hpc.LFP, [dropbox filesep 'Kteam'],1);
+    [UnitID,~,~,~,figid] = ClassifyHippocampalWaveforms(W, S, LFP_hpc.LFP, GitHubLocation, 1);
     set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]);
     saveas(figid,'NeuronClasses.fig');
     saveFigure(figid,'NeuronClasses',pwd);
@@ -166,16 +166,16 @@ end
 for i=1:length(S)
     ph.Nontransf{i} = ph_temp{i}.Nontransf;
     ph.Transf{i} = ph_temp{i}.Transf;
-    
+
     mu.Nontransf(i) = mu_temp{i}.Nontransf;
     mu.Transf(i) = mu_temp{i}.Transf;
-    
+
     Kappa.Nontransf(i) = Kappa_temp{i}.Nontransf;
     Kappa.Transf(i) = Kappa_temp{i}.Transf;
-    
+
     pval.Nontransf(i) = pval_temp{i}.Nontransf;
     pval.Transf(i) = pval_temp{i}.Transf;
-    
+
     Z.Nontransf(i) = Z_temp{i}.Nontransf;
     Z.Transf(i) = Z_temp{i}.Transf;
 end
@@ -191,7 +191,7 @@ if exist('channel_ob','var')
     for i=1:length(S)
         ph4Hz.Nontransf{i} = ph_temp{i}.Nontransf;
         ph4Hz.Transf{i} = ph_temp{i}.Transf;
-        
+
         if ~isempty(mu_temp{i}.Nontransf) || ~isempty(mu_temp{i}.Transf)
             mu4Hz.Nontransf(i) = mu_temp{i}.Nontransf;
             mu4Hz.Transf(i) = mu_temp{i}.Transf;
@@ -199,7 +199,7 @@ if exist('channel_ob','var')
             mu4Hz.Nontransf(i) = NaN;
             mu4Hz.Transf(i) = NaN;
         end
-        
+
         if ~isempty(Kappa_temp{i}.Nontransf) || ~isempty(Kappa_temp{i}.Transf)
             Kappa4Hz.Nontransf(i) = Kappa_temp{i}.Nontransf;
             Kappa4Hz.Transf(i) = Kappa_temp{i}.Transf;
@@ -207,7 +207,7 @@ if exist('channel_ob','var')
             Kappa4Hz.Nontransf(i) = NaN;
             Kappa4Hz.Transf(i) = NaN;
         end
-        
+
         if ~isempty(pval_temp{i}.Nontransf) || ~isempty(pval_temp{i}.Transf)
             pval4Hz.Nontransf(i) = pval_temp{i}.Nontransf;
             pval4Hz.Transf(i) = pval_temp{i}.Transf;
@@ -215,7 +215,7 @@ if exist('channel_ob','var')
             pval4Hz.Nontransf(i) = NaN;
             pval4Hz.Transf(i) = NaN;
         end
-        
+
         if ~isempty(Z_temp{i}.Nontransf) || ~isempty(Z_temp{i}.Transf)
             Z4Hz.Nontransf(i) = Z_temp{i}.Nontransf;
             Z4Hz.Transf(i) = Z_temp{i}.Transf;
@@ -224,7 +224,7 @@ if exist('channel_ob','var')
             Z4Hz.Transf(i) = NaN;
         end
     end
-    
+
     clear ph_temp mu_temp Kappa_temp pval_temp Z_temp
 end
 

@@ -44,6 +44,12 @@ end
 x = behavResources_slice.AlignedXtsd;
 y = behavResources_slice.AlignedYtsd;
 
-[occH, xx, yy] = hist2(x,y, sizexy(1), sizexy(2));
-occHS(1:sizexy(2),sizexy(1)) = SmoothDec(occH/freqVideo,[smo,smo]); 
+try
+    [occHS, xx, yy] = hist2(x,y, sizexy(1), sizexy(2));
+catch 
+    [occHS, xx, yy] = hist2(Data(x),Data(y), sizexy(1), sizexy(2));
+end
+
+occHS(1:sizexy(2),1:sizexy(1)) = SmoothDec(occHS/freqVideo,[smo,smo]); 
+
 end

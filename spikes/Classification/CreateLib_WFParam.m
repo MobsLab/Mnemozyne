@@ -8,7 +8,7 @@ function SpikeParameters = CreateLib_WFParam(mice, samplingrate)
 %     mice                number of mice from UMazePAG ERC experiment to
 %                         take the neurons from
 %     samplingrate        sampling rate of recordings (in Hz)
-% 
+%
 %  OUTPUT
 %
 %     SpikeParameters     matrix of N * 37 where N is number of waveforms.
@@ -83,25 +83,25 @@ AllWF(:,id_nan) = [];
 %%
 for iwave = 1:size(AllWF, 2)
     WaveToUse = AllWF(:, iwave);
-    
+
     if not(sum(isnan(WaveToUse)) == length(WaveToUse))
         % resample to higher frequency
         WaveToUseResample = resample(WaveToUse, resample_factor, 1);
-        
+
         % normalize amplitude
         WaveToUseResample = WaveToUseResample./(max(WaveToUseResample)-min(WaveToUseResample));
-        
+
         % Trough To Peak
         [valMin,indMin] = min(WaveToUseResample); % find trough
         [~,indPeak] = max(WaveToUseResample(indMin:end)); % find next peak
         WFInfo.TroughToPeakTime(iwave) = (indPeak/samplingrate)/resample_factor;
-        
+
         % Half amplitude duration
         HalfAmp = valMin/2;
         TimeAtHlafAmp(1) = find(WaveToUseResample<HalfAmp,1,'first');
         TimeAtHlafAmp(2) = find(WaveToUseResample<HalfAmp,1,'last');
         WFInfo.HalfAmpDur(iwave) = (TimeAtHlafAmp(2)-TimeAtHlafAmp(1))*5e-5/resample_factor;
-        
+
         % Half width
         DD = diff(WaveToUseResample);
         diffpeak = find(DD(indMin:end) == max(DD(indMin:end)))+indMin;
@@ -115,13 +115,13 @@ for iwave = 1:size(AllWF, 2)
                 IndMax = find(WaveToUseResample(IndMax:end)>0,1,'first')+IndMax ;
             end
         end
-        
+
         if not(isempty(IndMax)) && not(isempty(IndMax))
             WFInfo.HalfWidth(iwave) = ((IndMax-indMin)/samplingrate)/resample_factor;
         else
             WFInfo.HalfWidth(iwave) = NaN;
         end
-        
+
         % Area under curve
         WaveToUseResampleTemp = WaveToUseResample(indMin:end);
         valzero = find(WaveToUseResampleTemp>0,1,'first');
@@ -132,15 +132,15 @@ for iwave = 1:size(AllWF, 2)
         else
             WFInfo.AreaUnderCurveNorm(iwave) = 0;
         end
-        
+
         % Assymetry
         MaxBef = max(WaveToUseResample(1:indMin));
         MaxAft = max(WaveToUseResample(indMin:end));
         WFInfo.Assymetry(iwave) = (MaxAft-MaxBef)./(MaxAft+MaxBef);
-        
+
         % The wave itself
         WFInfo.Wave(iwave,:) = WaveToUse;
-        
+
     else
         WFInfo.TroughToPeakTime(iwave) = NaN;
         WFInfo.HalfAmpDur(iwave) = NaN;
@@ -151,7 +151,7 @@ for iwave = 1:size(AllWF, 2)
         WFInfo.OldOrNew(iwave)=(iwave<=size(LibraryWF,2));
     end
 end
-    
+
 %% Output
 SpikeParameters = [FR (WFInfo.HalfAmpDur/range(WFInfo.HalfAmpDur))' ...
     WFInfo.Assymetry' (WFInfo.TroughToPeakTime/range(WFInfo.TroughToPeakTime))'];
